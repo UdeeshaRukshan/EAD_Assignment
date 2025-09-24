@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CreateStationRequest, ConnectorType, ConnectorStatus } from '../types';
 import { apiService } from '../services/apiService';
+import LocationSelector from '../components/LocationSelector';
 
 const CreateStation: React.FC = () => {
   const navigate = useNavigate();
@@ -24,6 +25,13 @@ const CreateStation: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    // Validate location is selected
+    if (formData.location.latitude === 0 && formData.location.longitude === 0) {
+      setError('Please select a location on the map');
+      setLoading(false);
+      return;
+    }
 
     try {
       await apiService.createChargingStation(formData);
@@ -132,41 +140,26 @@ const CreateStation: React.FC = () => {
             </div>
 
             {/* Location */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Latitude *
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  required
-                  value={formData.location.latitude}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    location: { ...formData.location, latitude: parseFloat(e.target.value) }
-                  })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="34.0522"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Longitude *
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  required
-                  value={formData.location.longitude}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    location: { ...formData.location, longitude: parseFloat(e.target.value) }
-                  })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="-118.2437"
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Location *
+              </label>
+              <LocationSelector
+                selectedLocation={
+                  formData.location.latitude !== 0 || formData.location.longitude !== 0
+                    ? formData.location
+                    : undefined
+                }
+                onLocationSelect={(location) => 
+                  setFormData({ ...formData, location })
+                }
+                height="300px"
+              />
+              {formData.location.latitude !== 0 && formData.location.longitude !== 0 && (
+                <div className="mt-2 text-sm text-gray-600">
+                  Selected coordinates: {formData.location.latitude.toFixed(6)}, {formData.location.longitude.toFixed(6)}
+                </div>
+              )}
             </div>
 
             {/* Connectors */}
