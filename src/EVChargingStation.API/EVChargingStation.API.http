@@ -1,6 +1,70 @@
-@EVChargingStation.API_HostAddress = http://localhost:5105
+@EVChargingStation.API_HostAddress = https://localhost:7001  # For HTTPS
 
-GET {{EVChargingStation.API_HostAddress}}/weatherforecast/
+# Test Login Endpoint
+POST {{EVChargingStation.API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "Email": "admin@evstation.com",
+  "Password": "Admin123!"
+}
+
+###
+
+# Test Register Endpoint - Admin User
+POST {{EVChargingStation.API_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "FirstName": "Admin",
+  "LastName": "User", 
+  "Email": "admin@evstation.com",
+  "PhoneNumber": "+1234567890",
+  "Password": "Admin123!",
+  "Role": 0
+}
+
+###
+
+# Get Charging Stations (requires authentication)
+GET {{EVChargingStation.API_HostAddress}}/api/chargingstations
 Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+
+# Create Charging Station (Admin only)
+POST {{EVChargingStation.API_HostAddress}}/api/chargingstations
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "Downtown Charging Hub",
+  "location": {
+    "address": "123 Main Street",
+    "city": "Downtown",
+    "state": "CA", 
+    "zipCode": "90210",
+    "latitude": 34.0522,
+    "longitude": -118.2437
+  },
+  "connectors": [
+    {
+      "type": "AC",
+      "powerOutput": 22.0,
+      "status": "Available"
+    },
+    {
+      "type": "DC", 
+      "powerOutput": 50.0,
+      "status": "Available"
+    }
+  ],
+  "operatingHours": {
+    "openTime": "06:00:00",
+    "closeTime": "22:00:00"
+  },
+  "amenities": ["WiFi", "Parking", "Restroom"]
+}
 
 ###

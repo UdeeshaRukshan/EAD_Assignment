@@ -194,6 +194,18 @@ public class ChargingStationsController : ControllerBase
                 return Forbid();
             }
 
+            // Prevent deactivating stations with active bookings
+            if (request.Status == StationStatus.Inactive || request.Status == StationStatus.OutOfOrder)
+            {
+                var hasActiveBookings = await _stationService.HasActiveBookingsAsync(id);
+                if (hasActiveBookings)
+                {
+                    return BadRequest(new { 
+                        message = "Cannot deactivate station with active bookings. Please wait for current bookings to complete or cancel them first." 
+                    });
+                }
+            }
+
             var result = await _stationService.UpdateStationStatusAsync(id, request.Status);
             if (!result)
             {

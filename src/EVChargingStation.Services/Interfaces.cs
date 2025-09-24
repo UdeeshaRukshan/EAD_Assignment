@@ -24,6 +24,7 @@ public interface IChargingStationService
     Task<ChargingStation> UpdateStationAsync(ChargingStation station);
     Task<bool> DeleteStationAsync(string id);
     Task<bool> UpdateStationStatusAsync(string id, StationStatus status);
+    Task<bool> HasActiveBookingsAsync(string stationId);
 }
 
 public interface IBookingService

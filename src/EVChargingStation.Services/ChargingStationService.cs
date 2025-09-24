@@ -83,6 +83,19 @@ public class ChargingStationService : IChargingStationService
         return R * c;
     }
 
+    public async Task<bool> HasActiveBookingsAsync(string stationId)
+    {
+        var database = _stations.Database;
+        var bookingsCollection = database.GetCollection<Booking>("Bookings");
+        
+        var activeStatuses = new[] { BookingStatus.Confirmed, BookingStatus.InProgress };
+        var activeBookings = await bookingsCollection
+            .Find(b => b.StationId == stationId && activeStatuses.Contains(b.Status))
+            .CountDocumentsAsync();
+            
+        return activeBookings > 0;
+    }
+
     private static double DegreesToRadians(double degrees)
     {
         return degrees * (Math.PI / 180);

@@ -235,6 +235,35 @@ public class StationsController : Controller
     }
 
     [HttpPost]
+    public async Task<IActionResult> UpdateStatus(string id, StationStatus status)
+    {
+        var token = HttpContext.Session.GetString("AuthToken");
+        if (string.IsNullOrEmpty(token))
+        {
+            return RedirectToAction("Login", "Auth");
+        }
+
+        try
+        {
+            var result = await _apiService.PatchAsync($"/chargingstations/{id}/status", new { Status = status }, token);
+            if (result)
+            {
+                TempData["SuccessMessage"] = "Station status updated successfully!";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Failed to update station status";
+            }
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = "An error occurred while updating station status: " + ex.Message;
+        }
+
+        return RedirectToAction("Index");
+    }
+
+    [HttpPost]
     public async Task<IActionResult> Delete(string id)
     {
         var token = HttpContext.Session.GetString("AuthToken");

@@ -1,0 +1,460 @@
+@model StationDetailsViewModel
+@{
+    ViewData["Title"] = "Station Details";
+}
+
+<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="px-4 py-6 sm:px-0">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="h-16 w-16 rounded-full bg-primary-100 flex items-center justify-center">
+                            <i class="fas fa-charging-station text-primary-600 text-2xl"></i>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <h1 class="text-3xl font-bold text-gray-900 sm:truncate">
+                            @Model.Station.Name
+                        </h1>
+                        <div class="mt-1 flex flex-col sm:mt-0 sm:flex-row sm:flex-wrap sm:space-x-6">
+                            <div class="mt-2 flex items-center text-sm text-gray-500">
+                                <i class="fas fa-map-marker-alt mr-1"></i>
+                                @Model.Station.Address
+                            </div>
+                            <div class="mt-2 flex items-center text-sm text-gray-500">
+                                <i class="fas fa-clock mr-1"></i>
+                                @Model.Station.OpeningHours
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4 flex lg:mt-0 lg:ml-4 space-x-3">
+                <a asp-action="Edit" asp-route-id="@Model.Station.Id" class="btn-primary">
+                    <i class="fas fa-edit mr-2"></i>
+                    Edit Station
+                </a>
+                <a asp-action="Index" class="btn-secondary">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Back to Stations
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Station Status Banner -->
+    <div class="mb-6">
+        @switch (Model.Station.Status)
+        {
+            case StationStatus.Active:
+                <div class="bg-success-50 border border-success-200 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle text-success-600 mr-3"></i>
+                        <span class="text-success-800 font-medium">Station is Active and operational</span>
+                    </div>
+                </div>
+                break;
+            case StationStatus.Inactive:
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <i class="fas fa-pause-circle text-gray-600 mr-3"></i>
+                        <span class="text-gray-800 font-medium">Station is Inactive</span>
+                    </div>
+                </div>
+                break;
+            case StationStatus.Maintenance:
+                <div class="bg-warning-50 border border-warning-200 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <i class="fas fa-wrench text-warning-600 mr-3"></i>
+                        <span class="text-warning-800 font-medium">Station is under Maintenance</span>
+                    </div>
+                </div>
+                break;
+            case StationStatus.OutOfOrder:
+                <div class="bg-danger-50 border border-danger-200 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <i class="fas fa-times-circle text-danger-600 mr-3"></i>
+                        <span class="text-danger-800 font-medium">Station is Out of Order</span>
+                    </div>
+                </div>
+                break;
+        }
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Station Information -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Basic Information Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-lg font-semibold text-gray-900">
+                        <i class="fas fa-info-circle mr-2 text-primary-600"></i>
+                        Station Information
+                    </h3>
+                </div>
+                <div class="card-body space-y-4">
+                    @if (!string.IsNullOrEmpty(Model.Station.Description))
+                    {
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Description</label>
+                            <p class="mt-1 text-sm text-gray-900">@Model.Station.Description</p>
+                        </div>
+                    }
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Price per kWh</label>
+                            <p class="mt-1 text-lg font-semibold text-gray-900">$@Model.Station.PricePerKWh.ToString("F2")</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Operating Hours</label>
+                            <p class="mt-1 text-sm text-gray-900">@Model.Station.OpeningHours</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Location Coordinates</label>
+                        <div class="mt-1 grid grid-cols-2 gap-4">
+                            <div class="text-sm text-gray-900">
+                                <span class="font-medium">Lat:</span> @Model.Station.Location.Latitude.ToString("F6")
+                            </div>
+                            <div class="text-sm text-gray-900">
+                                <span class="font-medium">Lng:</span> @Model.Station.Location.Longitude.ToString("F6")
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (Model.Station.Amenities.Any())
+                    {
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Available Amenities</label>
+                            <div class="flex flex-wrap gap-2">
+                                @foreach (var amenity in Model.Station.Amenities)
+                                {
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                                        <i class="fas fa-check mr-1"></i>
+                                        @amenity
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Connectors Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-lg font-semibold text-gray-900">
+                        <i class="fas fa-plug mr-2 text-primary-600"></i>
+                        Charging Connectors (@Model.Station.Connectors.Count)
+                    </h3>
+                </div>
+                <div class="card-body">
+                    @if (Model.Station.Connectors.Any())
+                    {
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            @foreach (var connector in Model.Station.Connectors)
+                            {
+                                <div class="border border-gray-200 rounded-lg p-4 @(connector.IsAvailable ? "bg-white" : "bg-gray-50")">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0">
+                                                <div class="h-8 w-8 rounded-full @(connector.IsAvailable ? "bg-success-100" : "bg-gray-100") flex items-center justify-center">
+                                                    <i class="fas fa-bolt @(connector.IsAvailable ? "text-success-600" : "text-gray-400") text-sm"></i>
+                                                </div>
+                                            </div>
+                                            <div class="ml-3">
+                                                <h4 class="text-sm font-medium text-gray-900">
+                                                    @switch (connector.Type)
+                                                    {
+                                                        case ConnectorType.Type1: @("Type 1 (J1772)"); break;
+                                                        case ConnectorType.Type2: @("Type 2 (Mennekes)"); break;
+                                                        case ConnectorType.CHAdeMO: @("CHAdeMO"); break;
+                                                        case ConnectorType.CCS: @("CCS"); break;
+                                                        case ConnectorType.TeslaSuper: @("Tesla Supercharger"); break;
+                                                    }
+                                                </h4>
+                                                <p class="text-xs text-gray-500">@connector.Power kW</p>
+                                            </div>
+                                        </div>
+                                        @switch (connector.Status)
+                                        {
+                                            case ConnectorStatus.Available:
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-success-100 text-success-800">
+                                                    Available
+                                                </span>
+                                                break;
+                                            case ConnectorStatus.Occupied:
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                    Occupied
+                                                </span>
+                                                break;
+                                            case ConnectorStatus.Reserved:
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                    Reserved
+                                                </span>
+                                                break;
+                                            case ConnectorStatus.OutOfOrder:
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                    Out of Order
+                                                </span>
+                                                break;
+                                            case ConnectorStatus.Maintenance:
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                                    Maintenance
+                                                </span>
+                                                break;
+                                        }
+                                    </div>
+                                    <div class="text-xs text-gray-500">
+                                        @if (connector.IsAvailable)
+                                        {
+                                            <span class="text-success-600">✓ Available for booking</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-gray-500">⚠ Not available for booking</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-6">
+                            <i class="fas fa-plug text-gray-400 text-3xl mb-2"></i>
+                            <p class="text-gray-500">No connectors configured</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Recent Bookings Card -->
+            @if (Model.Bookings.Any())
+            {
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="text-lg font-semibold text-gray-900">
+                            <i class="fas fa-calendar-alt mr-2 text-primary-600"></i>
+                            Recent Bookings (@Model.Bookings.Count)
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Energy</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    @foreach (var booking in Model.Bookings.Take(5))
+                                    {
+                                        <tr>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                                @booking.StartTime.ToString("MMM dd, yyyy")
+                                            </td>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                                @booking.StartTime.ToString("HH:mm") - @booking.EndTime.ToString("HH:mm")
+                                            </td>
+                                            <td class="px-4 py-2 whitespace-nowrap">
+                                                @switch (booking.Status)
+                                                {
+                                                    case BookingStatus.Pending:
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                            Pending
+                                                        </span>
+                                                        break;
+                                                    case BookingStatus.Confirmed:
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                            Confirmed
+                                                        </span>
+                                                        break;
+                                                    case BookingStatus.InProgress:
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                            In Progress
+                                                        </span>
+                                                        break;
+                                                    case BookingStatus.Completed:
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                            Completed
+                                                        </span>
+                                                        break;
+                                                    case BookingStatus.Cancelled:
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                            Cancelled
+                                                        </span>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                                @(booking.EnergyConsumed > 0 ? $"{booking.EnergyConsumed:F2} kWh" : "-")
+                                            </td>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                                @(booking.TotalCost > 0 ? $"${booking.TotalCost:F2}" : "-")
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        @if (Model.Bookings.Count > 5)
+                        {
+                            <div class="mt-4 text-center">
+                                <p class="text-sm text-gray-500">Showing 5 of @Model.Bookings.Count bookings</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            <!-- Quick Stats -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-lg font-semibold text-gray-900">
+                        <i class="fas fa-chart-bar mr-2 text-primary-600"></i>
+                        Quick Stats
+                    </h3>
+                </div>
+                <div class="card-body space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Total Connectors</span>
+                        <span class="text-lg font-semibold text-gray-900">@Model.Station.Connectors.Count</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Available</span>
+                        <span class="text-lg font-semibold text-success-600">
+                            @Model.Station.Connectors.Count(c => c.IsAvailable && c.Status == ConnectorStatus.Available)
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Total Bookings</span>
+                        <span class="text-lg font-semibold text-gray-900">@Model.Bookings.Count</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Active Bookings</span>
+                        <span class="text-lg font-semibold text-primary-600">
+                            @Model.Bookings.Count(b => b.Status == BookingStatus.InProgress || b.Status == BookingStatus.Confirmed)
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-lg font-semibold text-gray-900">
+                        <i class="fas fa-bolt mr-2 text-primary-600"></i>
+                        Quick Actions
+                    </h3>
+                </div>
+                <div class="card-body space-y-3">
+                    <a asp-action="Edit" asp-route-id="@Model.Station.Id" 
+                       class="block w-full text-center btn-primary">
+                        <i class="fas fa-edit mr-2"></i>
+                        Edit Station Details
+                    </a>
+                    
+                    @if (Model.Station.Status == StationStatus.Active)
+                    {
+                        <form asp-action="UpdateStatus" method="post" class="block">
+                            <input type="hidden" name="id" value="@Model.Station.Id" />
+                            <input type="hidden" name="status" value="@((int)StationStatus.Maintenance)" />
+                            <button type="submit" class="w-full btn-warning">
+                                <i class="fas fa-wrench mr-2"></i>
+                                Set to Maintenance
+                            </button>
+                        </form>
+                    }
+                    else if (Model.Station.Status == StationStatus.Maintenance)
+                    {
+                        <form asp-action="UpdateStatus" method="post" class="block">
+                            <input type="hidden" name="id" value="@Model.Station.Id" />
+                            <input type="hidden" name="status" value="@((int)StationStatus.Active)" />
+                            <button type="submit" class="w-full btn-success">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                Set to Active
+                            </button>
+                        </form>
+                    }
+
+                    <button type="button" onclick="confirmDelete('@Model.Station.Id', '@Model.Station.Name')" 
+                            class="w-full btn-danger">
+                        <i class="fas fa-trash mr-2"></i>
+                        Delete Station
+                    </button>
+                </div>
+            </div>
+
+            <!-- Station Metadata -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-lg font-semibold text-gray-900">
+                        <i class="fas fa-info mr-2 text-primary-600"></i>
+                        Metadata
+                    </h3>
+                </div>
+                <div class="card-body space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider">Station ID</label>
+                        <p class="mt-1 text-sm text-gray-900 font-mono">@Model.Station.Id</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider">Created</label>
+                        <p class="mt-1 text-sm text-gray-900">@Model.Station.CreatedAt.ToString("MMM dd, yyyy HH:mm")</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider">Last Updated</label>
+                        <p class="mt-1 text-sm text-gray-900">@Model.Station.UpdatedAt.ToString("MMM dd, yyyy HH:mm")</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-danger-100">
+                <i class="fas fa-exclamation-triangle text-danger-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mt-4">Delete Charging Station</h3>
+            <div class="mt-2 px-7 py-3">
+                <p class="text-sm text-gray-500">Are you sure you want to delete <strong id="stationName"></strong>? This action cannot be undone.</p>
+            </div>
+            <div class="items-center px-4 py-3">
+                <form id="deleteForm" method="post" class="inline">
+                    <button type="submit" class="btn-danger mr-2">Delete</button>
+                </form>
+                <button onclick="closeDeleteModal()" class="btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmDelete(stationId, stationName) {
+            document.getElementById('stationName').textContent = stationName;
+            document.getElementById('deleteForm').action = '/Stations/Delete/' + stationId;
+            document.getElementById('deleteModal').classList.remove('hidden');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.add('hidden');
+        }
+    </script>
+}

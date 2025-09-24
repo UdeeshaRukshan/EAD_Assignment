@@ -1,0 +1,13 @@
+{
+  "name": "ev-charging-station-web",
+  "version": "1.0.0",
+  "description": "EV Charging Station Management Web Application",
+  "main": "index.js",
+  "scripts": {
+    "build-css": "tailwindcss -i ./wwwroot/css/site.css -o ./wwwroot/css/tailwind.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0",
+    "@tailwindcss/forms": "^0.5.7"
+  }
+}

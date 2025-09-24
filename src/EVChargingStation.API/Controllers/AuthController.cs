@@ -36,7 +36,8 @@ public class AuthController : ControllerBase
                 Email = request.Email,
                 PhoneNumber = request.PhoneNumber,
                 PasswordHash = request.Password,
-                Role = request.Role
+                Role = request.Role,
+                IsActive = true
             };
 
             await _userService.CreateUserAsync(user);

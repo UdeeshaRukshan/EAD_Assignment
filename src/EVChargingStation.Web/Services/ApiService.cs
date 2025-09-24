@@ -10,6 +10,7 @@ public interface IApiService
     Task<T?> GetAsync<T>(string endpoint, string? token = null);
     Task<T?> PostAsync<T>(string endpoint, object data, string? token = null);
     Task<T?> PutAsync<T>(string endpoint, object data, string? token = null);
+    Task<bool> PatchAsync(string endpoint, object data, string? token = null);
     Task<bool> DeleteAsync(string endpoint, string? token = null);
 }
 
@@ -90,6 +91,25 @@ public class ApiService : IApiService
         }
 
         return default(T);
+    }
+
+    public async Task<bool> PatchAsync(string endpoint, object data, string? token = null)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Patch, $"{_baseUrl}{endpoint}")
+        {
+            Content = new StringContent(
+                Newtonsoft.Json.JsonConvert.SerializeObject(data),
+                System.Text.Encoding.UTF8,
+                "application/json")
+        };
+
+        if (!string.IsNullOrEmpty(token))
+        {
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        }
+
+        var response = await _httpClient.SendAsync(request);
+        return response.IsSuccessStatusCode;
     }
 
     public async Task<bool> DeleteAsync(string endpoint, string? token = null)
