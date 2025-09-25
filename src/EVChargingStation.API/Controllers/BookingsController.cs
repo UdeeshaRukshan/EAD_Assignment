@@ -21,7 +21,7 @@ public class BookingsController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin,BackofficeUser")]
+    [Authorize(Roles = "Admin,Operator,BackofficeUser")]
     public async Task<ActionResult<IEnumerable<Booking>>> GetAllBookings()
     {
         try
@@ -206,15 +206,8 @@ public class BookingsController : ControllerBase
             var operatorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 
-            // Operators can only confirm bookings for their stations
-            if (userRole == "Operator")
-            {
-                var station = await _stationService.GetStationByIdAsync(booking.StationId);
-                if (station == null || station.OperatorId != operatorId)
-                {
-                    return Forbid();
-                }
-            }
+            // Allow Admins and Operators to confirm any booking
+            // (Removed station ownership restriction for Operators)
 
             var result = await _bookingService.ConfirmBookingAsync(id, operatorId!);
             if (!result)
@@ -249,6 +242,12 @@ public class BookingsController : ControllerBase
             {
                 return Forbid();
             }
+            
+            // Admins and Operators can cancel any booking
+            if (userRole != "Admin" && userRole != "Operator" && userRole != "EVOwner")
+            {
+                return Forbid();
+            }
 
             var result = await _bookingService.CancelBookingAsync(id);
             if (!result)
@@ -279,14 +278,8 @@ public class BookingsController : ControllerBase
             var operatorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 
-            if (userRole == "Operator")
-            {
-                var station = await _stationService.GetStationByIdAsync(booking.StationId);
-                if (station == null || station.OperatorId != operatorId)
-                {
-                    return Forbid();
-                }
-            }
+            // Allow Admins and Operators to complete any booking
+            // (Removed station ownership restriction for Operators)
 
             var result = await _bookingService.CompleteBookingAsync(id, request.EnergyConsumed);
             if (!result)
