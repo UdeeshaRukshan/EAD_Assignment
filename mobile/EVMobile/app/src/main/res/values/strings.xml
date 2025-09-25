@@ -1,3 +1,109 @@
 <resources>
-    <string name="app_name">EVMobile</string>
+    <string name="app_name">EV Charging Station</string>
+    
+    <!-- Navigation -->
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_bookings">Bookings</string>
+    <string name="nav_map">Map</string>
+    <string name="nav_profile">Profile</string>
+    
+    <!-- Authentication -->
+    <string name="login">Login</string>
+    <string name="register">Register</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="nic">NIC</string>
+    <string name="first_name">First Name</string>
+    <string name="last_name">Last Name</string>
+    <string name="phone_number">Phone Number</string>
+    <string name="ev_owner">EV Owner</string>
+    <string name="operator">Station Operator</string>
+    <string name="create_account">Create Account</string>
+    <string name="already_have_account">Already have an account? Login</string>
+    <string name="dont_have_account">Don\'t have an account? Register</string>
+    
+    <!-- Dashboard -->
+    <string name="welcome_back">Welcome back</string>
+    <string name="pending_reservations">Pending Reservations</string>
+    <string name="approved_reservations">Approved Reservations</string>
+    <string name="nearby_stations">Nearby Stations</string>
+    <string name="quick_booking">Quick Booking</string>
+    <string name="view_all_stations">View All Stations</string>
+    <string name="my_bookings">My Bookings</string>
+    <string name="scan_qr">Scan QR</string>
+    <string name="manage_bookings">Manage Bookings</string>
+    
+    <!-- Bookings -->
+    <string name="create_booking">Create Booking</string>
+    <string name="modify_booking">Modify Booking</string>
+    <string name="cancel_booking">Cancel Booking</string>
+    <string name="booking_details">Booking Details</string>
+    <string name="station_name">Station Name</string>
+    <string name="connector_type">Connector Type</string>
+    <string name="start_time">Start Time</string>
+    <string name="end_time">End Time</string>
+    <string name="total_amount">Total Amount</string>
+    <string name="booking_status">Status</string>
+    <string name="notes">Notes</string>
+    
+    <!-- Station Details -->
+    <string name="station_details">Station Details</string>
+    <string name="address">Address</string>
+    <string name="opening_hours">Opening Hours</string>
+    <string name="price_per_kwh">Price per kWh</string>
+    <string name="available_connectors">Available Connectors</string>
+    <string name="book_now">Book Now</string>
+    <string name="add_to_favorites">Add to Favorites</string>
+    <string name="remove_from_favorites">Remove from Favorites</string>
+    
+    <!-- Profile -->
+    <string name="profile">Profile</string>
+    <string name="edit_profile">Edit Profile</string>
+    <string name="deactivate_account">Deactivate Account</string>
+    <string name="logout">Logout</string>
+    <string name="settings">Settings</string>
+    
+    <!-- QR Code -->
+    <string name="qr_code">QR Code</string>
+    <string name="scan_qr_code">Scan QR Code</string>
+    <string name="qr_scanner">QR Scanner</string>
+    <string name="point_camera_at_qr">Point your camera at the QR code</string>
+    
+    <!-- Common -->
+    <string name="loading">Loading...</string>
+    <string name="error">Error</string>
+    <string name="retry">Retry</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="confirm">Confirm</string>
+    <string name="search">Search</string>
+    <string name="filter">Filter</string>
+    <string name="refresh">Refresh</string>
+    
+    <!-- Validation Messages -->
+    <string name="field_required">This field is required</string>
+    <string name="invalid_email">Please enter a valid email address</string>
+    <string name="invalid_nic">Please enter a valid NIC number</string>
+    <string name="invalid_phone">Please enter a valid phone number</string>
+    <string name="password_too_short">Password must be at least 8 characters</string>
+    <string name="passwords_dont_match">Passwords do not match</string>
+    
+    <!-- Success Messages -->
+    <string name="login_successful">Login successful</string>
+    <string name="registration_successful">Registration successful</string>
+    <string name="booking_created">Booking created successfully</string>
+    <string name="booking_updated">Booking updated successfully</string>
+    <string name="booking_cancelled">Booking cancelled successfully</string>
+    <string name="profile_updated">Profile updated successfully</string>
+    
+    <!-- Error Messages -->
+    <string name="network_error">Network error. Please check your connection</string>
+    <string name="server_error">Server error. Please try again later</string>
+    <string name="invalid_credentials">Invalid email or password</string>
+    <string name="booking_failed">Failed to create booking</string>
+    <string name="location_permission_required">Location permission is required to find nearby stations</string>
 </resources>
