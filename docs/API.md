@@ -1,10 +1,20 @@
 # API Documentation
 
 ## Base URL
-```
-https://localhost:7000/api
+
 ```
 
+
+https://localhost:7000/api
+```
+## TO run the API
+```
+dotnet run --launch-profile https
+
+or 
+
+dotnet run
+```
 ## Authentication
 
 All protected endpoints require a JWT Bearer token in the Authorization header:
