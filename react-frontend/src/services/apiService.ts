@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
-import { AuthResponse, LoginRequest, ChargingStation, CreateStationRequest } from '../types';
+import { AuthResponse, LoginRequest, ChargingStation, CreateStationRequest, Booking, CreateBookingRequest, CompleteBookingRequest } from '../types';
 
 class ApiService {
   private api: AxiosInstance;
@@ -98,6 +98,49 @@ class ApiService {
       status,
     });
     return response.data;
+  }
+
+  // Booking endpoints
+  async getAllBookings(): Promise<Booking[]> {
+    const response: AxiosResponse<Booking[]> = await this.api.get('/bookings');
+    return response.data;
+  }
+
+  async getUserBookings(userId: string): Promise<Booking[]> {
+    const response: AxiosResponse<Booking[]> = await this.api.get(`/bookings/user/${userId}`);
+    return response.data;
+  }
+
+  async getStationBookings(stationId: string): Promise<Booking[]> {
+    const response: AxiosResponse<Booking[]> = await this.api.get(`/bookings/station/${stationId}`);
+    return response.data;
+  }
+
+  async getPendingBookings(): Promise<Booking[]> {
+    const response: AxiosResponse<Booking[]> = await this.api.get('/bookings/pending');
+    return response.data;
+  }
+
+  async getBooking(id: string): Promise<Booking> {
+    const response: AxiosResponse<Booking> = await this.api.get(`/bookings/${id}`);
+    return response.data;
+  }
+
+  async createBooking(data: CreateBookingRequest): Promise<Booking> {
+    const response: AxiosResponse<Booking> = await this.api.post('/bookings', data);
+    return response.data;
+  }
+
+  async confirmBooking(id: string): Promise<void> {
+    await this.api.patch(`/bookings/${id}/confirm`);
+  }
+
+  async cancelBooking(id: string): Promise<void> {
+    await this.api.patch(`/bookings/${id}/cancel`);
+  }
+
+  async completeBooking(id: string, data: CompleteBookingRequest): Promise<void> {
+    await this.api.patch(`/bookings/${id}/complete`, data);
   }
 }
 
