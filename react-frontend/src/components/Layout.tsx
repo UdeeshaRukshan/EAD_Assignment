@@ -62,6 +62,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     Add Station
                   </Link>
                 )}
+                {(user?.role === 'EVOwner' || user?.role === 'Admin' || user?.role === 'Operator' || user?.role === 'BackofficeUser') && (
+                  <Link
+                    to="/bookings"
+                    className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors"
+                  >
+                    <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 4l6 6m0-6l-6 6" />
+                    </svg>
+                    {user?.role === 'EVOwner' ? 'My Bookings' : 'Bookings'}
+                  </Link>
+                )}
               </div>
             </div>
 

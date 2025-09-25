@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import StationsList from './pages/StationsList';
 import CreateStation from './pages/CreateStation';
 import EditStation from './pages/EditStation';
+import BookingManagement from './pages/BookingManagement';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 
@@ -51,6 +52,16 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <EditStation />
+                  </Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/bookings" 
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <BookingManagement />
                   </Layout>
                 </ProtectedRoute>
               } 

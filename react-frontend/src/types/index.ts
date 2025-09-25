@@ -46,14 +46,16 @@ export enum ConnectorType {
 export enum ConnectorStatus {
   Available = 0,
   Occupied = 1,
-  OutOfOrder = 2,
-  Reserved = 3
+  Reserved = 2,
+  OutOfOrder = 3,
+  Maintenance = 4
 }
 
 export enum StationStatus {
   Active = 0,
   Inactive = 1,
-  Maintenance = 2
+  Maintenance = 2,
+  OutOfOrder = 3
 }
 
 export interface Location {
@@ -98,4 +100,46 @@ export interface CreateStationRequest {
   openingHours: string;
   pricePerKWh: number;
   imageUrls: string[];
+}
+
+// Booking related types and enums
+export enum BookingStatus {
+  Pending = 0,
+  Confirmed = 1,
+  InProgress = 2,
+  Completed = 3,
+  Cancelled = 4,
+  NoShow = 5
+}
+
+export interface Booking {
+  id: string;
+  userId: string;
+  stationId: string;
+  connectorId: string;
+  startTime: string;
+  endTime: string;
+  status: BookingStatus;
+  qrCode: string;
+  energyConsumed: number;
+  totalCost: number;
+  notes: string;
+  confirmedBy?: string;
+  confirmedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  isDeleted: boolean;
+}
+
+export interface CreateBookingRequest {
+  userId: string;
+  stationId: string;
+  connectorId: string;
+  startTime: string;
+  endTime: string;
+  notes: string;
+}
+
+export interface CompleteBookingRequest {
+  energyConsumed: number;
 }
