@@ -41,57 +41,24 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
 
-        <!-- Google Maps API Key -->
-        <meta-data
+        <!-- Google Maps API Key - TODO: Configure when implementing maps -->
+        <!-- meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="${MAPS_API_KEY}" />
+            android:value="${MAPS_API_KEY}" / -->
 
         <!-- Main Activity -->
         <activity
-            android:name=".ui.main.MainActivity"
+            android:name=".MainActivity"
             android:exported="true"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.EVMobile.NoActionBar">
+            android:theme="@style/Theme.EVMobile">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!-- Authentication Activity -->
-        <activity
-            android:name=".ui.auth.AuthActivity"
-            android:exported="false"
-            android:screenOrientation="portrait"
-            android:theme="@style/Theme.EVMobile.NoActionBar" />
-
-        <!-- Station Details Activity -->
-        <activity
-            android:name=".ui.station.StationDetailActivity"
-            android:exported="false"
-            android:screenOrientation="portrait"
-            android:parentActivityName=".ui.main.MainActivity" />
-
-        <!-- Booking Activity -->
-        <activity
-            android:name=".ui.booking.BookingActivity"
-            android:exported="false"
-            android:screenOrientation="portrait"
-            android:parentActivityName=".ui.station.StationDetailActivity" />
-
-        <!-- QR Scanner Activity -->
-        <activity
-            android:name=".ui.qr.QRScannerActivity"
-            android:exported="false"
-            android:screenOrientation="portrait"
-            android:theme="@style/Theme.EVMobile.NoActionBar" />
-
-        <!-- Profile Activity -->
-        <activity
-            android:name=".ui.profile.ProfileActivity"
-            android:exported="false"
-            android:screenOrientation="portrait"
-            android:parentActivityName=".ui.main.MainActivity" />
+        <!-- We'll add other activities as we create them -->
 
     </application>
 
