@@ -2,8 +2,27 @@
     <!-- Base application theme. -->
     <style name="Base.Theme.EVMobile" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/primary_green</item>
+        <item name="colorPrimaryVariant">@color/primary_green_dark</item>
+        <item name="colorSecondary">@color/accent_blue</item>
+        <item name="android:colorBackground">@color/background_primary</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnPrimary">@color/text_white</item>
+        <item name="colorOnSecondary">@color/text_white</item>
+        <item name="colorOnBackground">@color/text_primary</item>
+        <item name="colorOnSurface">@color/text_primary</item>
     </style>
 
-    <style name="Theme.EVMobile" parent="Base.Theme.EVMobile" />
+    <style name="Theme.EVMobile" parent="Base.Theme.EVMobile">
+        <!-- Show action bar for main app screens -->
+        <item name="windowActionBar">true</item>
+        <item name="windowNoTitle">false</item>
+    </style>
+
+    <style name="Theme.EVMobile.NoActionBar" parent="Base.Theme.EVMobile">
+        <!-- Hide action bar for splash and auth screens -->
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowFullscreen">false</item>
+    </style>
 </resources>
