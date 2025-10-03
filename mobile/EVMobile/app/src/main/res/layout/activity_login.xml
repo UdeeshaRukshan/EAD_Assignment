@@ -129,8 +129,20 @@
                 android:textSize="14sp"
                 android:textColor="@color/primary_green"
                 android:layout_gravity="center"
-                android:layout_marginBottom="32dp"
+                android:layout_marginBottom="16dp"
                 android:padding="8dp" />
+
+            <!-- Skip Login Button -->
+            <Button
+                android:id="@+id/btnSkipLogin"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Skip Login (Demo Mode)"
+                android:textSize="14sp"
+                android:textColor="@color/text_secondary"
+                android:backgroundTint="@color/background_secondary"
+                android:layout_marginBottom="24dp"
+                style="@style/Widget.Material3.Button.OutlinedButton" />
 
             <!-- Divider -->
             <View

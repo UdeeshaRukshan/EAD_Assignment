@@ -41,10 +41,10 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
 
-        <!-- Google Maps API Key - TODO: Configure when implementing maps -->
-        <!-- meta-data
+        <!-- Google Maps API Key -->
+        <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="${MAPS_API_KEY}" / -->
+            android:value="YOUR_API_KEY_HERE" />
 
         <!-- Splash Activity -->
         <activity
@@ -71,6 +71,13 @@
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.EVMobile.NoActionBar" />
+
+        <!-- Dashboard Activity -->
+        <activity
+            android:name=".DashboardActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.EVMobile" />
 
         <!-- Main Activity -->
         <activity

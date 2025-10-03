@@ -17,6 +17,7 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var etPassword: TextInputEditText
     private lateinit var btnLogin: Button
     private lateinit var btnSignup: Button
+    private lateinit var btnSkipLogin: Button
     private lateinit var pbLoading: ProgressBar
     
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,6 +36,7 @@ class LoginActivity : AppCompatActivity() {
         etPassword = findViewById(R.id.etPassword)
         btnLogin = findViewById(R.id.btnLogin)
         btnSignup = findViewById(R.id.btnSignup)
+        btnSkipLogin = findViewById(R.id.btnSkipLogin)
         pbLoading = findViewById(R.id.pbLoading)
     }
     
@@ -45,6 +47,10 @@ class LoginActivity : AppCompatActivity() {
         
         btnSignup.setOnClickListener {
             navigateToSignup()
+        }
+        
+        btnSkipLogin.setOnClickListener {
+            navigateToMain()
         }
     }
     
@@ -121,6 +127,7 @@ class LoginActivity : AppCompatActivity() {
         pbLoading.visibility = if (show) android.view.View.VISIBLE else android.view.View.GONE
         btnLogin.isEnabled = !show
         btnSignup.isEnabled = !show
+        btnSkipLogin.isEnabled = !show
     }
     
     private fun navigateToSignup() {
