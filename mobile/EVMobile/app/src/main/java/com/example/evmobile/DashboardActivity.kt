@@ -13,8 +13,20 @@ import androidx.core.content.ContextCompat
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.*
 import com.google.android.gms.maps.model.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.io.OutputStreamWriter
+import java.net.HttpURLConnection
+import java.net.URL
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 class DashboardActivity : AppCompatActivity(), OnMapReadyCallback {
     
@@ -32,14 +44,17 @@ class DashboardActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var cardProfile: CardView
     private lateinit var cardSettings: CardView
     
-    // Sample data - in real app, this would come from API/database
-    private var pendingReservations = 3
-    private var approvedReservations = 7
-    private var userFirstName = "John" // This would be fetched from user session
+    // Dashboard data - fetched from API
+    private var pendingReservations = 0
+    private var approvedReservations = 0
+    private var userFirstName = ""
+    private var userId = ""
+    private var authToken = ""
     
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1001
         private const val MAPVIEW_BUNDLE_KEY = "MapViewBundleKey"
+        private const val API_BASE_URL = "http://10.0.2.2:5105/api" // Use 10.0.2.2 for emulator
     }
     
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,10 +71,12 @@ class DashboardActivity : AppCompatActivity(), OnMapReadyCallback {
         }
         
         initViews()
+        loadUserSession()
         setupUI()
         setupMapView(mapViewBundle)
         setupClickListeners()
         checkLocationPermission()
+        loadDashboardData()
     }
     
     private fun initViews() {
@@ -112,6 +129,107 @@ class DashboardActivity : AppCompatActivity(), OnMapReadyCallback {
             showToast("Settings")
             // TODO: Navigate to settings
         }
+    }
+    
+    private fun loadUserSession() {
+        val prefs = getSharedPreferences("EVChargingApp", MODE_PRIVATE)
+        authToken = prefs.getString("auth_token", "") ?: ""
+        userId = prefs.getString("user_id", "") ?: ""
+        val fullName = prefs.getString("user_name", "") ?: ""
+        
+        // Extract first name from full name
+        userFirstName = if (fullName.isNotEmpty()) {
+            fullName.split(" ").firstOrNull() ?: "User"
+        } else {
+            "User"
+        }
+    }
+    
+    private fun loadDashboardData() {
+        if (userId.isNotEmpty() && authToken.isNotEmpty()) {
+            fetchUserBookings()
+        } else {
+            // User not logged in, show default values
+            updateUI()
+        }
+    }
+    
+    private fun fetchUserBookings() {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val url = URL("$API_BASE_URL/bookings/user/$userId")
+                val connection = url.openConnection() as HttpURLConnection
+                
+                connection.requestMethod = "GET"
+                connection.setRequestProperty("Authorization", "Bearer $authToken")
+                connection.setRequestProperty("Content-Type", "application/json")
+                connection.connectTimeout = 15000
+                connection.readTimeout = 15000
+                
+                val responseCode = connection.responseCode
+                
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    val reader = BufferedReader(InputStreamReader(connection.inputStream))
+                    val response = reader.use { it.readText() }
+                    
+                    parseBookingsData(response)
+                } else {
+                    // Handle error - use default values
+                    withContext(Dispatchers.Main) {
+                        updateUI()
+                    }
+                }
+                
+            } catch (e: Exception) {
+                // Network error - use default values
+                withContext(Dispatchers.Main) {
+                    updateUI()
+                }
+            }
+        }
+    }
+    
+    private suspend fun parseBookingsData(jsonString: String) {
+        try {
+            val bookingsArray = JSONArray(jsonString)
+            var pendingCount = 0
+            var approvedCount = 0
+            
+            for (i in 0 until bookingsArray.length()) {
+                val booking = bookingsArray.getJSONObject(i)
+                val status = booking.optString("status", "")
+                
+                when (status.lowercase()) {
+                    "pending" -> pendingCount++
+                    "confirmed", "approved" -> approvedCount++
+                }
+            }
+            
+            pendingReservations = pendingCount
+            approvedReservations = approvedCount
+            
+            withContext(Dispatchers.Main) {
+                updateUI()
+            }
+            
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                updateUI()
+            }
+        }
+    }
+    
+    private fun updateUI() {
+        // Set welcome message
+        tvWelcomeMessage.text = "Welcome back, $userFirstName!"
+        
+        // Set current date
+        val dateFormat = SimpleDateFormat("EEEE, MMMM dd", Locale.getDefault())
+        tvCurrentDate.text = dateFormat.format(Date())
+        
+        // Set reservation counts
+        tvPendingCount.text = pendingReservations.toString()
+        tvApprovedCount.text = approvedReservations.toString()
     }
     
     override fun onMapReady(map: GoogleMap) {
