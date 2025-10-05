@@ -8,8 +8,22 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.io.OutputStreamWriter
+import java.net.HttpURLConnection
+import java.net.URL
 
 class SignupActivity : AppCompatActivity() {
+    
+    companion object {
+        private const val API_BASE_URL = "http://10.0.2.2:5105/api" // Use 10.0.2.2 for emulator
+    }
     
     private lateinit var tilFirstName: TextInputLayout
     private lateinit var etFirstName: TextInputEditText
@@ -125,14 +139,8 @@ class SignupActivity : AppCompatActivity() {
         
         showLoading(true)
         
-        // Simulate signup process
-        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-            showLoading(false)
-            
-            // For demo purposes, always succeed
-            Toast.makeText(this, "Account created successfully!", Toast.LENGTH_SHORT).show()
-            navigateToMain()
-        }, 2000)
+        // Register user via API
+        registerUserViaAPI(firstName, lastName, nic, email, phone, password, userType)
     }
     
     private fun validateInput(
@@ -211,5 +219,105 @@ class SignupActivity : AppCompatActivity() {
         startActivity(intent)
         overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         finish()
+    }
+    
+    private fun registerUserViaAPI(
+        firstName: String, lastName: String, nic: String, email: String, 
+        phone: String, password: String, userType: String
+    ) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val url = URL("$API_BASE_URL/auth/register")
+                val connection = url.openConnection() as HttpURLConnection
+                
+                connection.requestMethod = "POST"
+                connection.setRequestProperty("Content-Type", "application/json")
+                connection.setRequestProperty("Accept", "application/json")
+                connection.doOutput = true
+                connection.connectTimeout = 15000
+                connection.readTimeout = 15000
+                
+                // Map user type to role number
+                val roleNumber = when (userType) {
+                    "EV Owner" -> 0
+                    "Admin" -> 1
+                    "Operator" -> 2
+                    "Backoffice User" -> 3
+                    else -> 0 // Default to EV Owner
+                }
+                
+                // Create JSON request body
+                val jsonRequest = JSONObject().apply {
+                    put("firstName", firstName)
+                    put("lastName", lastName)
+                    put("email", email)
+                    put("phoneNumber", phone)
+                    put("password", password)
+                    put("role", roleNumber)
+                }
+                
+                // Write request body
+                val writer = OutputStreamWriter(connection.outputStream)
+                writer.write(jsonRequest.toString())
+                writer.flush()
+                writer.close()
+                
+                val responseCode = connection.responseCode
+                
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    val reader = BufferedReader(InputStreamReader(connection.inputStream))
+                    val response = reader.use { it.readText() }
+                    
+                    val jsonResponse = JSONObject(response)
+                    val success = jsonResponse.optBoolean("success", false)
+                    
+                    withContext(Dispatchers.Main) {
+                        showLoading(false)
+                        if (success) {
+                            // Store token and user info if needed
+                            val token = jsonResponse.optString("token", "")
+                            val userObj = jsonResponse.optJSONObject("user")
+                            
+                            // You can store these in SharedPreferences for later use
+                            // For now, just show success message
+                            Toast.makeText(this@SignupActivity, "Account created successfully!", Toast.LENGTH_SHORT).show()
+                            navigateToMain()
+                        } else {
+                            Toast.makeText(this@SignupActivity, "Registration failed. Please try again.", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                } else {
+                    // Handle error response
+                    val errorStream = connection.errorStream
+                    val errorResponse = if (errorStream != null) {
+                        BufferedReader(InputStreamReader(errorStream)).use { it.readText() }
+                    } else {
+                        "Registration failed with code: $responseCode"
+                    }
+                    
+                    withContext(Dispatchers.Main) {
+                        showLoading(false)
+                        try {
+                            val errorJson = JSONObject(errorResponse)
+                            val errorMessage = errorJson.optString("message", "Registration failed. Please try again.")
+                            Toast.makeText(this@SignupActivity, errorMessage, Toast.LENGTH_LONG).show()
+                        } catch (e: Exception) {
+                            Toast.makeText(this@SignupActivity, "Registration failed. Please try again.", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+                
+            } catch (e: java.net.ConnectException) {
+                withContext(Dispatchers.Main) {
+                    showLoading(false)
+                    Toast.makeText(this@SignupActivity, "Cannot connect to server. Please check your internet connection.", Toast.LENGTH_LONG).show()
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    showLoading(false)
+                    Toast.makeText(this@SignupActivity, "Registration failed: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
     }
 }

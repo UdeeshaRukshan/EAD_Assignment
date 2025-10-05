@@ -56,4 +56,7 @@
     <!-- Ripple Effects -->
     <color name="ripple_light">#20000000</color>
     <color name="ripple_dark">#40FFFFFF</color>
+    
+    <!-- Status Badge Background -->
+    <color name="status_background">#E8F5E8</color>
 </resources>
