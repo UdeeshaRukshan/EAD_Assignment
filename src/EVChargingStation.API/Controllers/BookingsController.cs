@@ -161,6 +161,19 @@ public class BookingsController : ControllerBase
                 return BadRequest(new { message = "Charging station not found" });
             }
 
+            // Check if station is available for booking
+            if (station.Status != StationStatus.Active)
+            {
+                string statusMessage = station.Status switch
+                {
+                    StationStatus.Maintenance => "Station is currently under maintenance and not accepting bookings",
+                    StationStatus.OutOfOrder => "Station is out of order and not accepting bookings", 
+                    StationStatus.Inactive => "Station is inactive and not accepting bookings",
+                    _ => "Station is not available for booking"
+                };
+                return BadRequest(new { message = statusMessage });
+            }
+
             var connector = station.Connectors.FirstOrDefault(c => c.Id == request.ConnectorId);
             if (connector == null)
             {
@@ -184,6 +197,98 @@ public class BookingsController : ControllerBase
 
             var createdBooking = await _bookingService.CreateBookingAsync(booking);
             return CreatedAtAction(nameof(GetBooking), new { id = createdBooking.Id }, createdBooking);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPut("{id}")]
+    public async Task<ActionResult<Booking>> UpdateBooking(string id, [FromBody] UpdateBookingRequest request)
+    {
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            var existingBooking = await _bookingService.GetBookingByIdAsync(id);
+            if (existingBooking == null)
+            {
+                return NotFound();
+            }
+
+            // Only EV owners can update their own bookings
+            if (userRole == "EVOwner" && existingBooking.UserId != userId)
+            {
+                return Forbid();
+            }
+
+            // Admins and Operators can update any booking
+            if (userRole != "Admin" && userRole != "Operator" && userRole != "EVOwner")
+            {
+                return Forbid();
+            }
+
+            // Check if booking can be modified (at least 12 hours before start time)
+            var startTime = existingBooking.StartTime;
+            var now = DateTime.UtcNow;
+            var hoursUntilStart = (startTime - now).TotalHours;
+
+            if (userRole == "EVOwner" && hoursUntilStart < 12)
+            {
+                return BadRequest(new { message = "Bookings can only be modified at least 12 hours before the reservation time." });
+            }
+
+            // Only allow modifications for pending or confirmed bookings
+            if (existingBooking.Status != BookingStatus.Pending && existingBooking.Status != BookingStatus.Confirmed)
+            {
+                return BadRequest(new { message = "Only pending or confirmed bookings can be modified." });
+            }
+
+            // Validate station and connector exist if they're being changed
+            if (request.StationId != existingBooking.StationId || request.ConnectorId != existingBooking.ConnectorId)
+            {
+                var station = await _stationService.GetStationByIdAsync(request.StationId);
+                if (station == null)
+                {
+                    return BadRequest(new { message = "Charging station not found" });
+                }
+
+                // Check if station is available for booking
+                if (station.Status != StationStatus.Active)
+                {
+                    string statusMessage = station.Status switch
+                    {
+                        StationStatus.Maintenance => "Station is currently under maintenance and not accepting bookings",
+                        StationStatus.OutOfOrder => "Station is out of order and not accepting bookings",
+                        StationStatus.Inactive => "Station is inactive and not accepting bookings",
+                        _ => "Station is not available for booking"
+                    };
+                    return BadRequest(new { message = statusMessage });
+                }
+
+                var connector = station.Connectors.FirstOrDefault(c => c.Id == request.ConnectorId);
+                if (connector == null)
+                {
+                    return BadRequest(new { message = "Connector not found" });
+                }
+
+                if (!connector.IsAvailable || connector.Status != ConnectorStatus.Available)
+                {
+                    return BadRequest(new { message = "Connector is not available" });
+                }
+            }
+
+            // Update the booking
+            existingBooking.StationId = request.StationId;
+            existingBooking.ConnectorId = request.ConnectorId;
+            existingBooking.StartTime = request.StartTime;
+            existingBooking.EndTime = request.EndTime;
+            existingBooking.Notes = request.Notes ?? existingBooking.Notes;
+
+            var updatedBooking = await _bookingService.UpdateBookingAsync(existingBooking);
+            return Ok(updatedBooking);
         }
         catch (Exception ex)
         {
@@ -305,6 +410,15 @@ public class CreateBookingRequest
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
     public string Notes { get; set; } = string.Empty;
+}
+
+public class UpdateBookingRequest
+{
+    public string StationId { get; set; } = string.Empty;
+    public string ConnectorId { get; set; } = string.Empty;
+    public DateTime StartTime { get; set; }
+    public DateTime EndTime { get; set; }
+    public string? Notes { get; set; }
 }
 
 public class CompleteBookingRequest

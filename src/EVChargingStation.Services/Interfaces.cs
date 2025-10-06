@@ -40,6 +40,7 @@ public interface IBookingService
     Task<bool> CancelBookingAsync(string bookingId);
     Task<bool> CompleteBookingAsync(string bookingId, decimal energyConsumed);
     Task<string> GenerateQRCodeAsync(string bookingId);
+    Task<string> GenerateConfirmedQRCodeAsync(string bookingId);
 }
 
 public interface INotificationService
