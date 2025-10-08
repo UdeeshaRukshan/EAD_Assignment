@@ -228,14 +228,15 @@ class SignupActivity : AppCompatActivity() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val url = URL("$API_BASE_URL/auth/register")
+                println("DEBUG: Connecting to: $url")
                 val connection = url.openConnection() as HttpURLConnection
                 
                 connection.requestMethod = "POST"
                 connection.setRequestProperty("Content-Type", "application/json")
                 connection.setRequestProperty("Accept", "application/json")
                 connection.doOutput = true
-                connection.connectTimeout = 15000
-                connection.readTimeout = 15000
+                connection.connectTimeout = 30000  // Increased to 30 seconds
+                connection.readTimeout = 30000     // Increased to 30 seconds
                 
                 // Map user type to role number
                 val roleNumber = when (userType) {
@@ -308,14 +309,23 @@ class SignupActivity : AppCompatActivity() {
                 }
                 
             } catch (e: java.net.ConnectException) {
+                println("DEBUG: Connection error - ${e.message}")
                 withContext(Dispatchers.Main) {
                     showLoading(false)
-                    Toast.makeText(this@SignupActivity, "Cannot connect to server. Please check your internet connection.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this@SignupActivity, "Cannot connect to server. Check API is running on port 5105.", Toast.LENGTH_LONG).show()
+                }
+            } catch (e: java.net.SocketTimeoutException) {
+                println("DEBUG: Timeout error - ${e.message}")
+                withContext(Dispatchers.Main) {
+                    showLoading(false)
+                    Toast.makeText(this@SignupActivity, "Connection timeout. Please check your network connection.", Toast.LENGTH_LONG).show()
                 }
             } catch (e: Exception) {
+                println("DEBUG: General error - ${e.message}")
+                e.printStackTrace()
                 withContext(Dispatchers.Main) {
                     showLoading(false)
-                    Toast.makeText(this@SignupActivity, "Registration failed: ${e.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this@SignupActivity, "Registration failed: ${e.javaClass.simpleName} - ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
         }

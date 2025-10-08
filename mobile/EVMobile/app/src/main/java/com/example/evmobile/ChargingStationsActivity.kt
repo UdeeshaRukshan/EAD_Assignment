@@ -185,8 +185,8 @@ class ChargingStationsActivity : AppCompatActivity(), OnMapReadyCallback {
                 connection.requestMethod = "GET"
                 connection.setRequestProperty("Content-Type", "application/json")
                 connection.setRequestProperty("Accept", "application/json")
-                connection.connectTimeout = 15000 // Increased timeout
-                connection.readTimeout = 15000
+                connection.connectTimeout = 30000  // Increased to 30 seconds
+                connection.readTimeout = 30000     // Increased to 30 seconds
                 connection.doInput = true
                 
                 println("Connecting to API...")

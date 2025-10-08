@@ -163,8 +163,8 @@ class DashboardActivity : AppCompatActivity(), OnMapReadyCallback {
                 connection.requestMethod = "GET"
                 connection.setRequestProperty("Authorization", "Bearer $authToken")
                 connection.setRequestProperty("Content-Type", "application/json")
-                connection.connectTimeout = 15000
-                connection.readTimeout = 15000
+                connection.connectTimeout = 30000  // Increased to 30 seconds
+                connection.readTimeout = 30000     // Increased to 30 seconds
                 
                 val responseCode = connection.responseCode
                 
