@@ -33,19 +33,9 @@ class StationDetailActivity : AppCompatActivity(), OnMapReadyCallback {
             return
         }
 
-        setupToolbar()
         setupUI()
         setupMap()
         setupClickListeners()
-    }
-
-    private fun setupToolbar() {
-        val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
-        setSupportActionBar(toolbar)
-        supportActionBar?.apply {
-            setDisplayHomeAsUpEnabled(true)
-            title = station.name
-        }
     }
 
     private fun setupUI() {
