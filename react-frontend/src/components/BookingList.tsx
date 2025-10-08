@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Booking, BookingStatus, ChargingStation } from '../types';
+import { Booking, BookingStatus, ChargingStation, StationStatus } from '../types';
 import { apiService } from '../services/apiService';
+import QRCodeDisplay from './QRCodeDisplay';
+import EditBookingModal from './EditBookingModal';
 
 interface BookingListProps {
   bookings: Booking[];
@@ -21,6 +23,7 @@ const BookingList: React.FC<BookingListProps> = ({
   const [error, setError] = useState<string>('');
   const [showCompleteForm, setShowCompleteForm] = useState<string>('');
   const [energyConsumed, setEnergyConsumed] = useState<number>(0);
+  const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
 
   const getStatusBadge = (status: BookingStatus): string => {
     const badges = {
@@ -83,6 +86,25 @@ const BookingList: React.FC<BookingListProps> = ({
       booking.status === BookingStatus.Confirmed &&
       (userRole === 'Admin' || userRole === 'Operator')
     );
+  };
+
+  const canEditBooking = (booking: Booking): boolean => {
+    // Only EV owners can edit their own bookings
+    if (userRole !== 'EVOwner' || booking.userId !== currentUserId) {
+      return false;
+    }
+
+    // Only pending or confirmed bookings can be edited
+    if (booking.status !== BookingStatus.Pending && booking.status !== BookingStatus.Confirmed) {
+      return false;
+    }
+
+    // Check 12-hour notice requirement
+    const startTime = new Date(booking.startTime);
+    const now = new Date();
+    const hoursUntilStart = (startTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+    
+    return hoursUntilStart >= 12;
   };
 
   const handleConfirmBooking = async (bookingId: string) => {
@@ -257,10 +279,62 @@ const BookingList: React.FC<BookingListProps> = ({
             </div>
           )}
 
-          {booking.qrCode && (booking.status === BookingStatus.Confirmed || booking.status === BookingStatus.Pending) && (
-            <div className="mb-4 p-3 bg-blue-50 rounded border border-blue-200">
-              <p className="text-sm text-gray-600 mb-2">QR Code</p>
-              <p className="text-xs font-mono text-blue-700 break-all">{booking.qrCode}</p>
+          {booking.qrCode && booking.status === BookingStatus.Confirmed && (
+            <div className="mb-4 p-4 bg-blue-50 rounded border border-blue-200">
+              <div className="flex flex-col lg:flex-row lg:items-start lg:space-x-6">
+                <div className="flex-1 mb-4 lg:mb-0">
+                  <p className="text-sm text-gray-600 mb-2 font-medium">
+                    Confirmed Booking QR Code
+                  </p>
+                  <p className="text-xs text-gray-500 mb-3">
+                    Your booking is confirmed! Show this QR code at the charging station to start your session
+                  </p>
+                  <div className="mb-3 p-2 bg-green-100 border border-green-200 rounded text-xs">
+                    <span className="text-green-700 font-medium">✅ Ready to use</span>
+                    {booking.confirmedAt && (
+                      <span className="text-green-600 ml-2">
+                        • Confirmed on {new Date(booking.confirmedAt).toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex justify-center lg:justify-start">
+                  <QRCodeDisplay 
+                    data={booking.qrCode}
+                    size={150}
+                    label="Scan to Start Charging"
+                    showDownload={true}
+                    className="bg-white p-3 rounded-lg border border-green-300"
+                    booking={booking}
+                    stationInfo={{
+                      name: getStationName(booking.stationId),
+                      address: getStationAddress(booking.stationId),
+                      connectorInfo: getConnectorInfo(booking.stationId, booking.connectorId)
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Pending booking message */}
+          {booking.status === BookingStatus.Pending && (
+            <div className="mb-4 p-4 bg-yellow-50 rounded border border-yellow-200">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-yellow-800">
+                    <span className="font-medium">Awaiting Confirmation</span>
+                  </p>
+                  <p className="text-xs text-yellow-700 mt-1">
+                    Your booking is pending operator confirmation. QR code will be available once confirmed.
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
@@ -303,6 +377,16 @@ const BookingList: React.FC<BookingListProps> = ({
 
           {/* Action Buttons */}
           <div className="flex justify-end space-x-2 border-t pt-4">
+            {/* Edit Action - Available for EV Owners (own bookings) with 12-hour notice */}
+            {canEditBooking(booking) && (
+              <button
+                onClick={() => setEditingBooking(booking)}
+                className="px-4 py-2 border border-blue-300 text-blue-600 rounded-md hover:bg-blue-50 transition-colors"
+              >
+                Edit Booking
+              </button>
+            )}
+
             {/* Cancel Action - Available for EV Owners (own bookings) and Admin/Operators (any booking) */}
             {canCancelBooking(booking) && (
               <button
@@ -343,7 +427,7 @@ const BookingList: React.FC<BookingListProps> = ({
                 <svg className="h-4 w-4 mr-1 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
-                Bookings can only be cancelled at least 12 hours before the reservation time.
+                Bookings can only be cancelled or modified at least 12 hours before the reservation time.
               </p>
             </div>
           )}
@@ -362,6 +446,20 @@ const BookingList: React.FC<BookingListProps> = ({
           )}
         </div>
       ))}
+
+      {/* Edit Booking Modal */}
+      {editingBooking && (
+        <EditBookingModal
+          booking={editingBooking}
+          stations={stations.filter(station => station.status === StationStatus.Active)}
+          isOpen={!!editingBooking}
+          onClose={() => setEditingBooking(null)}
+          onBookingUpdated={() => {
+            setEditingBooking(null);
+            onBookingUpdated();
+          }}
+        />
+      )}
     </div>
   );
 };

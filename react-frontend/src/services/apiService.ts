@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
-import { AuthResponse, LoginRequest, ChargingStation, CreateStationRequest, Booking, CreateBookingRequest, CompleteBookingRequest } from '../types';
+import { AuthResponse, LoginRequest, ChargingStation, CreateStationRequest, Booking, CreateBookingRequest, UpdateBookingRequest, CompleteBookingRequest } from '../types';
 
 class ApiService {
   private api: AxiosInstance;
@@ -128,6 +128,11 @@ class ApiService {
 
   async createBooking(data: CreateBookingRequest): Promise<Booking> {
     const response: AxiosResponse<Booking> = await this.api.post('/bookings', data);
+    return response.data;
+  }
+
+  async updateBooking(id: string, data: UpdateBookingRequest): Promise<Booking> {
+    const response: AxiosResponse<Booking> = await this.api.put(`/bookings/${id}`, data);
     return response.data;
   }
 

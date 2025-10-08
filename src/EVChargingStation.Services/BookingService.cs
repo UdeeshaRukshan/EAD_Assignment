@@ -58,10 +58,14 @@ public class BookingService : IBookingService
 
     public async Task<bool> ConfirmBookingAsync(string bookingId, string operatorId)
     {
+        // Generate a new QR code with confirmation timestamp
+        var qrCode = await GenerateConfirmedQRCodeAsync(bookingId);
+        
         var update = Builders<Booking>.Update
             .Set(b => b.Status, BookingStatus.Confirmed)
             .Set(b => b.ConfirmedBy, operatorId)
             .Set(b => b.ConfirmedAt, DateTime.UtcNow)
+            .Set(b => b.QrCode, qrCode)
             .Set(b => b.UpdatedAt, DateTime.UtcNow);
         
         var result = await _bookings.UpdateOneAsync(b => b.Id == bookingId, update);
@@ -98,9 +102,36 @@ public class BookingService : IBookingService
 
     public Task<string> GenerateQRCodeAsync(string bookingId)
     {
-        // For now, return a simple string representation of the QR data
-        // In a production environment, you would use a proper QR code library
-        var qrData = $"BOOKING:{bookingId}";
-        return Task.FromResult(Convert.ToBase64String(Encoding.UTF8.GetBytes(qrData)));
+        // Generate a comprehensive QR code data structure
+        var qrData = new
+        {
+            Type = "EV_CHARGING_BOOKING",
+            BookingId = bookingId,
+            Timestamp = DateTime.UtcNow.ToString("O"), // ISO 8601 format
+            Version = "1.0",
+            Status = "PENDING"
+        };
+        
+        var jsonData = System.Text.Json.JsonSerializer.Serialize(qrData);
+        return Task.FromResult(Convert.ToBase64String(Encoding.UTF8.GetBytes(jsonData)));
+    }
+
+    public Task<string> GenerateConfirmedQRCodeAsync(string bookingId)
+    {
+        // Generate a confirmed QR code with additional security information
+        var qrData = new
+        {
+            Type = "EV_CHARGING_BOOKING",
+            BookingId = bookingId,
+            Timestamp = DateTime.UtcNow.ToString("O"), // ISO 8601 format
+            Version = "1.0",
+            Status = "CONFIRMED",
+            ConfirmedAt = DateTime.UtcNow.ToString("O"),
+            // Add a simple hash for verification (in production, use proper cryptographic methods)
+            Hash = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{bookingId}:{DateTime.UtcNow.Ticks}")).Substring(0, 8)
+        };
+        
+        var jsonData = System.Text.Json.JsonSerializer.Serialize(qrData);
+        return Task.FromResult(Convert.ToBase64String(Encoding.UTF8.GetBytes(jsonData)));
     }
 }

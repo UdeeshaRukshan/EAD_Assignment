@@ -224,6 +224,11 @@ Create a new booking.
 }
 ```
 
+**Validation:**
+- Station must be in Active status (not Maintenance, OutOfOrder, or Inactive)
+- Connector must be available and in Available status
+- User must be authenticated and authorized to create bookings
+
 **Response:**
 ```json
 {
@@ -245,6 +250,45 @@ Create a new booking.
 
 #### PATCH /bookings/{id}/confirm
 Confirm a booking. Requires Admin or Operator role.
+
+#### PUT /bookings/{id}
+Update a booking. EV owners can update their own bookings with at least 12 hours notice. Only active stations accept booking modifications.
+
+**Request Body:**
+```json
+{
+  "stationId": "507f1f77bcf86cd799439012",
+  "connectorId": "507f1f77bcf86cd799439014",
+  "startTime": "2024-09-20T14:00:00Z",
+  "endTime": "2024-09-20T16:00:00Z",
+  "notes": "Updated booking requirements"
+}
+```
+
+**Validation:**
+- Only EV owners can update their own bookings (except Admin/Operator)
+- Booking must be in Pending or Confirmed status
+- At least 12 hours notice required for EV owners
+- If changing station/connector: new station must be Active status, new connector must be available
+
+**Response:**
+```json
+{
+  "id": "507f1f77bcf86cd799439015",
+  "userId": "507f1f77bcf86cd799439011",
+  "stationId": "507f1f77bcf86cd799439012",
+  "connectorId": "507f1f77bcf86cd799439014",
+  "startTime": "2024-09-20T14:00:00Z",
+  "endTime": "2024-09-20T16:00:00Z",
+  "status": 1,
+  "qrCode": "eyJUeXBlIjoiRVZfQ0hBUkdJTkdfQk9PS0lORyI...",
+  "energyConsumed": 0,
+  "totalCost": 0,
+  "notes": "Updated booking requirements",
+  "createdAt": "2024-09-18T15:30:00Z",
+  "updatedAt": "2024-09-20T10:15:00Z"
+}
+```
 
 #### PATCH /bookings/{id}/cancel
 Cancel a booking. Users can cancel their own bookings.

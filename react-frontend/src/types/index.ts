@@ -140,6 +140,14 @@ export interface CreateBookingRequest {
   notes: string;
 }
 
+export interface UpdateBookingRequest {
+  stationId: string;
+  connectorId: string;
+  startTime: string;
+  endTime: string;
+  notes?: string;
+}
+
 export interface CompleteBookingRequest {
   energyConsumed: number;
 }
