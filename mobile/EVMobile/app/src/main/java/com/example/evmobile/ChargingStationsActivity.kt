@@ -10,7 +10,6 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
 import androidx.cardview.widget.CardView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -32,7 +31,6 @@ import java.net.URL
 
 class ChargingStationsActivity : AppCompatActivity(), OnMapReadyCallback {
 
-    private lateinit var toolbar: Toolbar
     private lateinit var swipeRefresh: SwipeRefreshLayout
     private lateinit var recyclerView: RecyclerView
     private lateinit var mapView: MapView
@@ -66,7 +64,6 @@ class ChargingStationsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
         
         initViews()
-        setupToolbar()
         setupRecyclerView()
         setupMapView(mapViewBundle)
         setupListeners()
@@ -76,19 +73,12 @@ class ChargingStationsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
     
     private fun initViews() {
-        toolbar = findViewById(R.id.toolbar)
         swipeRefresh = findViewById(R.id.swipeRefresh)
         recyclerView = findViewById(R.id.recyclerView)
         mapView = findViewById(R.id.mapView)
         toggleViewButton = findViewById(R.id.fabToggleView)
         progressBar = findViewById(R.id.progressBar)
         emptyView = findViewById(R.id.emptyView)
-    }
-    
-    private fun setupToolbar() {
-        setSupportActionBar(toolbar)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = "Charging Stations"
     }
     
     private fun setupRecyclerView() {
@@ -185,8 +175,8 @@ class ChargingStationsActivity : AppCompatActivity(), OnMapReadyCallback {
                 connection.requestMethod = "GET"
                 connection.setRequestProperty("Content-Type", "application/json")
                 connection.setRequestProperty("Accept", "application/json")
-                connection.connectTimeout = 15000 // Increased timeout
-                connection.readTimeout = 15000
+                connection.connectTimeout = 30000  // Increased to 30 seconds
+                connection.readTimeout = 30000     // Increased to 30 seconds
                 connection.doInput = true
                 
                 println("Connecting to API...")

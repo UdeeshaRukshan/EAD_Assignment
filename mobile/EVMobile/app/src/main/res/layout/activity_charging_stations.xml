@@ -6,28 +6,10 @@
     android:layout_height="match_parent"
     android:background="@color/background_secondary">
 
-    <!-- App Bar -->
-    <com.google.android.material.appbar.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:elevation="4dp"
-        app:elevation="4dp">
-
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="@color/primary_green"
-            app:titleTextColor="@color/text_white"
-            app:navigationIconTint="@color/text_white" />
-
-    </com.google.android.material.appbar.AppBarLayout>
-
     <!-- Main Content -->
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        android:layout_height="match_parent">
 
         <!-- Progress Bar -->
         <ProgressBar

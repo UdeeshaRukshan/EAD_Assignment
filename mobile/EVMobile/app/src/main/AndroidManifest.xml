@@ -77,21 +77,21 @@
             android:name=".DashboardActivity"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.EVMobile" />
+            android:theme="@style/Theme.EVMobile.NoActionBar" />
 
         <!-- Main Activity -->
         <activity
             android:name=".MainActivity"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.EVMobile" />
+            android:theme="@style/Theme.EVMobile.NoActionBar" />
 
         <!-- Charging Stations Activity -->
         <activity
             android:name=".ChargingStationsActivity"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.EVMobile"
+            android:theme="@style/Theme.EVMobile.NoActionBar"
             android:parentActivityName=".MainActivity" />
 
         <!-- Station Detail Activity -->
@@ -99,7 +99,7 @@
             android:name=".StationDetailActivity"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.EVMobile"
+            android:theme="@style/Theme.EVMobile.NoActionBar"
             android:parentActivityName=".ChargingStationsActivity" />
 
     </application>

@@ -159,8 +159,8 @@ class LoginActivity : AppCompatActivity() {
                 connection.setRequestProperty("Content-Type", "application/json")
                 connection.setRequestProperty("Accept", "application/json")
                 connection.doOutput = true
-                connection.connectTimeout = 15000
-                connection.readTimeout = 15000
+                connection.connectTimeout = 30000  // Increased to 30 seconds
+                connection.readTimeout = 30000     // Increased to 30 seconds
                 
                 // Create JSON request body
                 val jsonRequest = JSONObject().apply {
