@@ -110,6 +110,14 @@
             android:theme="@style/Theme.EVMobile.NoActionBar"
             android:parentActivityName=".MainActivity" />
 
+        <!-- Create Booking Activity -->
+        <activity
+            android:name=".CreateBookingActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.EVMobile.NoActionBar"
+            android:parentActivityName=".BookingActivity" />
+
     </application>
 
 </manifest>

@@ -1,5 +1,6 @@
 package com.example.evmobile.fragments
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -9,6 +10,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.evmobile.CreateBookingActivity
 import com.example.evmobile.R
 import com.example.evmobile.adapters.UpcomingBookingsAdapter
 import com.example.evmobile.models.Booking
@@ -67,9 +69,18 @@ class UpcomingBookingsFragment : Fragment() {
     
     private fun setupClickListeners() {
         fabNewBooking.setOnClickListener {
-            showToast("Navigate to charging stations to book")
-            // TODO: Navigate to charging stations list or map
+            val intent = Intent(requireContext(), CreateBookingActivity::class.java)
+            startActivityForResult(intent, CREATE_BOOKING_REQUEST_CODE)
+            // Add slide animation
+            requireActivity().overridePendingTransition(
+                com.example.evmobile.R.anim.slide_in_right,
+                com.example.evmobile.R.anim.slide_out_left
+            )
         }
+    }
+    
+    companion object {
+        private const val CREATE_BOOKING_REQUEST_CODE = 1001
     }
     
     private fun loadBookings() {
@@ -112,5 +123,14 @@ class UpcomingBookingsFragment : Fragment() {
     
     private fun showToast(message: String) {
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+    }
+    
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == CREATE_BOOKING_REQUEST_CODE && resultCode == android.app.Activity.RESULT_OK) {
+            // Refresh the bookings list
+            loadBookings()
+            showToast("Booking created successfully!")
+        }
     }
 }
