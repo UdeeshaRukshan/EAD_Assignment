@@ -132,6 +132,19 @@
             android:gravity="end">
 
             <Button
+                android:id="@+id/btnQRCode"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:text="QR Code"
+                android:textSize="12sp"
+                android:layout_marginEnd="8dp"
+                android:visibility="gone"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:textColor="@color/primary_green"
+                android:drawableStart="@drawable/ic_qr_code"
+                android:drawablePadding="4dp" />
+
+            <Button
                 android:id="@+id/btnModifyBooking"
                 android:layout_width="wrap_content"
                 android:layout_height="32dp"

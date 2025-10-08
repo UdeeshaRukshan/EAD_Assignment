@@ -12,12 +12,14 @@ data class Booking(
     val duration: Int, // in minutes
     val status: BookingStatus,
     val chargingType: String, // AC/DC
-    val estimatedCost: Double
+    val estimatedCost: Double,
+    val qrCode: String? = null // QR code for approved bookings
 )
 
 enum class BookingStatus(val displayName: String) {
     PENDING("Pending"),
     CONFIRMED("Confirmed"),
+    APPROVED("Approved"), // New status for bookings with QR codes
     IN_PROGRESS("In Progress"),
     COMPLETED("Completed"),
     CANCELLED("Cancelled")
@@ -57,9 +59,10 @@ object DummyDataGenerator {
                 stationLocation = "123 Main Street, Colombo",
                 bookingDateTime = Date(currentTime + 5 * 24 * 60 * 60 * 1000), // 5 days from now
                 duration = 120, // 2 hours
-                status = BookingStatus.CONFIRMED,
+                status = BookingStatus.APPROVED,
                 chargingType = "DC Fast",
-                estimatedCost = 25.50
+                estimatedCost = 25.50,
+                qrCode = "BOOKING:B001:S001:COLOMBO_CITY_CENTER:2024-10-14T14:00:00Z:APPROVED"
             ),
             Booking(
                 id = "B002",
@@ -70,7 +73,8 @@ object DummyDataGenerator {
                 duration = 90, // 1.5 hours
                 status = BookingStatus.PENDING,
                 chargingType = "AC",
-                estimatedCost = 18.75
+                estimatedCost = 18.75,
+                qrCode = null
             ),
             Booking(
                 id = "B003",
@@ -79,20 +83,22 @@ object DummyDataGenerator {
                 stationLocation = "Galle Face Green, Colombo",
                 bookingDateTime = Date(currentTime + 10 * 24 * 60 * 60 * 1000), // 10 days from now
                 duration = 180, // 3 hours
-                status = BookingStatus.CONFIRMED,
+                status = BookingStatus.APPROVED,
                 chargingType = "DC Fast",
-                estimatedCost = 42.00
+                estimatedCost = 42.00,
+                qrCode = "BOOKING:B003:S003:GALLE_FACE_GREEN:2024-10-19T10:00:00Z:APPROVED"
             ),
             Booking(
-                id = "B004",
-                stationId = "S004",
-                stationName = "Negombo Beach Resort",
-                stationLocation = "Beach Road, Negombo",
-                bookingDateTime = Date(currentTime + 2 * 24 * 60 * 60 * 1000), // 2 days from now
-                duration = 60, // 1 hour
-                status = BookingStatus.PENDING,
-                chargingType = "AC",
-                estimatedCost = 12.25
+                id = "B005",
+                stationId = "S005",
+                stationName = "Airport Express Station",
+                stationLocation = "Bandaranaike International Airport",
+                bookingDateTime = Date(currentTime + 1 * 24 * 60 * 60 * 1000), // 1 day from now
+                duration = 45, // 45 minutes
+                status = BookingStatus.APPROVED,
+                chargingType = "DC Ultra Fast",
+                estimatedCost = 35.75,
+                qrCode = "BOOKING:B005:S005:AIRPORT_EXPRESS:2024-10-10T16:30:00Z:APPROVED"
             )
         )
     }

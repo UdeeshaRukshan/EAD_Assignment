@@ -15,7 +15,8 @@ import java.util.Locale
 class UpcomingBookingsAdapter(
     private var bookings: List<Booking>,
     private val onModifyClick: (Booking) -> Unit,
-    private val onCancelClick: (Booking) -> Unit
+    private val onCancelClick: (Booking) -> Unit,
+    private val onQRCodeClick: (Booking) -> Unit
 ) : RecyclerView.Adapter<UpcomingBookingsAdapter.BookingViewHolder>() {
     
     inner class BookingViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -24,6 +25,7 @@ class UpcomingBookingsAdapter(
         val tvBookingStatus: TextView = itemView.findViewById(R.id.tvBookingStatus)
         val tvBookingDateTime: TextView = itemView.findViewById(R.id.tvBookingDateTime)
         val tvBookingDuration: TextView = itemView.findViewById(R.id.tvBookingDuration)
+        val btnQRCode: Button = itemView.findViewById(R.id.btnQRCode)
         val btnModifyBooking: Button = itemView.findViewById(R.id.btnModifyBooking)
         val btnCancelBooking: Button = itemView.findViewById(R.id.btnCancelBooking)
     }
@@ -59,9 +61,18 @@ class UpcomingBookingsAdapter(
             BookingStatus.CONFIRMED -> R.drawable.status_confirmed_bg
             BookingStatus.PENDING -> R.drawable.status_pending_bg
             BookingStatus.IN_PROGRESS -> R.drawable.status_in_progress_bg
+            BookingStatus.APPROVED -> R.drawable.status_approved_bg
             else -> R.drawable.status_confirmed_bg
         }
         holder.tvBookingStatus.setBackgroundResource(statusBackgroundRes)
+        
+        // Show QR code button only for approved bookings
+        if (booking.status == BookingStatus.APPROVED) {
+            holder.btnQRCode.visibility = View.VISIBLE
+            holder.btnQRCode.setOnClickListener { onQRCodeClick(booking) }
+        } else {
+            holder.btnQRCode.visibility = View.GONE
+        }
         
         // Set click listeners
         holder.btnModifyBooking.setOnClickListener { onModifyClick(booking) }

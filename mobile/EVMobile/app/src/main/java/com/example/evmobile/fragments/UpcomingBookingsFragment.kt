@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.evmobile.CreateBookingActivity
+import com.example.evmobile.QRCodeActivity
 import com.example.evmobile.R
 import com.example.evmobile.adapters.UpcomingBookingsAdapter
 import com.example.evmobile.models.Booking
@@ -58,6 +59,9 @@ class UpcomingBookingsFragment : Fragment() {
             },
             onCancelClick = { booking ->
                 showCancelConfirmation(booking)
+            },
+            onQRCodeClick = { booking ->
+                openQRCodeActivity(booking)
             }
         )
         
@@ -123,6 +127,20 @@ class UpcomingBookingsFragment : Fragment() {
     
     private fun showToast(message: String) {
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+    }
+    
+    private fun openQRCodeActivity(booking: Booking) {
+        val intent = Intent(requireContext(), QRCodeActivity::class.java).apply {
+            putExtra(QRCodeActivity.EXTRA_BOOKING_ID, booking.id)
+            putExtra(QRCodeActivity.EXTRA_STATION_NAME, booking.stationName)
+            putExtra(QRCodeActivity.EXTRA_BOOKING_DATE_TIME, booking.bookingDateTime.time)
+            putExtra(QRCodeActivity.EXTRA_QR_CODE, booking.qrCode)
+        }
+        startActivity(intent)
+        requireActivity().overridePendingTransition(
+            R.anim.slide_in_right,
+            R.anim.slide_out_left
+        )
     }
     
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
