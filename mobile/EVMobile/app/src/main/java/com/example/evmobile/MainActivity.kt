@@ -34,7 +34,12 @@ class MainActivity : AppCompatActivity() {
         
         findViewById<CardView>(R.id.cardProfile).setOnClickListener {
             showToast("Profile")
-            // TODO: Navigate to profile
+            findViewById<CardView>(R.id.cardProfile).setOnClickListener {
+                val intent = Intent(this, ProfileActivity::class.java)
+                startActivity(intent)
+                overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+            }
+
         }
         
         findViewById<CardView>(R.id.cardQRScanner).setOnClickListener {
