@@ -22,8 +22,11 @@ public abstract class BaseEntity
 }
 
 // User model
-public class User : BaseEntity
+public class User:BaseEntity
 {
+    [BsonElement("nic")]
+    public string NIC { get; set; } = string.Empty;
+    
     [BsonElement("firstName")]
     [Required]
     public string FirstName { get; set; } = string.Empty;

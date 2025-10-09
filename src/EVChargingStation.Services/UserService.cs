@@ -21,6 +21,12 @@ public class UserService : IUserService
         var mongoClient = new MongoClient(databaseSettings.Value.ConnectionString);
         var mongoDatabase = mongoClient.GetDatabase(databaseSettings.Value.DatabaseName);
         _users = mongoDatabase.GetCollection<User>(databaseSettings.Value.UsersCollectionName);
+
+        var indexKeys = Builders<User>.IndexKeys.Ascending(u => u.NIC);
+        var indexOptions = new CreateIndexOptions { Unique = true, Sparse = true };
+        var indexModel = new CreateIndexModel<User>(indexKeys, indexOptions);
+        _users.Indexes.CreateOne(indexModel);
+
         _jwtSecret = configuration["JwtSettings:Secret"] ?? "your-secret-key-here";
     }
 
@@ -29,9 +35,14 @@ public class UserService : IUserService
         return await _users.Find(user => !user.IsDeleted).ToListAsync();
     }
 
-    public async Task<User?> GetUserByIdAsync(string id)
+    public async Task<User?> GetUserByIdAsync(string nic)
     {
-        return await _users.Find(user => user.Id == id && !user.IsDeleted).FirstOrDefaultAsync();
+        return await _users.Find(user => user.NIC == nic && !user.IsDeleted).FirstOrDefaultAsync();
+    }
+
+    public async Task<User?> GetUserByNICAsync(string nic)
+    {
+        return await _users.Find(user => user.NIC == nic && !user.IsDeleted).FirstOrDefaultAsync();
     }
 
     public async Task<User?> GetUserByEmailAsync(string email)
@@ -49,14 +60,14 @@ public class UserService : IUserService
     public async Task<User> UpdateUserAsync(User user)
     {
         user.UpdatedAt = DateTime.UtcNow;
-        await _users.ReplaceOneAsync(u => u.Id == user.Id, user);
+       await _users.ReplaceOneAsync(u => u.NIC == user.NIC, user);
         return user;
     }
 
-    public async Task<bool> DeleteUserAsync(string id)
+    public async Task<bool> DeleteUserAsync(string nic)
     {
         var update = Builders<User>.Update.Set(u => u.IsDeleted, true).Set(u => u.UpdatedAt, DateTime.UtcNow);
-        var result = await _users.UpdateOneAsync(u => u.Id == id, update);
+        var result = await _users.UpdateOneAsync(u => u.NIC == nic, update);
         return result.ModifiedCount > 0;
     }
 
@@ -76,7 +87,7 @@ public class UserService : IUserService
         {
             Subject = new ClaimsIdentity(new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.NameIdentifier, user.NIC),
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.Name, $"{user.FirstName} {user.LastName}"),
                 new Claim(ClaimTypes.Role, user.Role.ToString())
