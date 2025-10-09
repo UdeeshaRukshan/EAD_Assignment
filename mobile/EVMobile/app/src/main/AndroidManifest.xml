@@ -102,6 +102,30 @@
             android:theme="@style/Theme.EVMobile.NoActionBar"
             android:parentActivityName=".ChargingStationsActivity" />
 
+        <!-- Booking Activity -->
+        <activity
+            android:name=".BookingActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.EVMobile.NoActionBar"
+            android:parentActivityName=".MainActivity" />
+
+        <!-- Create Booking Activity -->
+        <activity
+            android:name=".CreateBookingActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.EVMobile.NoActionBar"
+            android:parentActivityName=".BookingActivity" />
+
+        <!-- QR Code Activity -->
+        <activity
+            android:name=".QRCodeActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.EVMobile.NoActionBar"
+            android:parentActivityName=".BookingActivity" />
+
     </application>
 
 </manifest>
