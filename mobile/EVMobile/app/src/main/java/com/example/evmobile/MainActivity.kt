@@ -23,8 +23,7 @@ class MainActivity : AppCompatActivity() {
         }
         
         findViewById<CardView>(R.id.cardBookings).setOnClickListener {
-            showToast("My Bookings")
-            // TODO: Navigate to bookings
+            navigateToBookings()
         }
         
         findViewById<CardView>(R.id.cardMap).setOnClickListener {
@@ -67,6 +66,12 @@ class MainActivity : AppCompatActivity() {
     
     private fun navigateToDashboard() {
         val intent = Intent(this, DashboardActivity::class.java)
+        startActivity(intent)
+        overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+    }
+
+    private fun navigateToBookings() {
+        val intent = Intent(this, BookingActivity::class.java)
         startActivity(intent)
         overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
     }

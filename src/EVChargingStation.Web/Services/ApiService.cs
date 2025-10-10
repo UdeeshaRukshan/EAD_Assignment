@@ -1,3 +1,10 @@
+/*
+ * File: ApiService.cs
+ * Purpose: Provides API service methods for HTTP communication in the EV Charging Station Web application
+ * Author: EAD Assignment
+ * Date: 2025
+ */
+
 namespace EVChargingStation.Web.Services;
 
 public class ApiSettings

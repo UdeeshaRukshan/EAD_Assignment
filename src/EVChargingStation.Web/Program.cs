@@ -1,3 +1,10 @@
+/*
+ * File: Program.cs
+ * Purpose: Entry point for the EV Charging Station Web application
+ * Author: EAD Assignment
+ * Date: 2025
+ */
+
 using EVChargingStation.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
