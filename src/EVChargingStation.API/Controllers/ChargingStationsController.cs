@@ -2,7 +2,7 @@
  * File: ChargingStationsController.cs
  * Purpose: Manages charging station endpoints for the EV Charging Station API
  * Author: EAD Assignment
- * Date: 2024
+ * Date: 2025
  */
 
 using Microsoft.AspNetCore.Mvc;

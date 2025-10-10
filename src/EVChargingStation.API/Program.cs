@@ -1,3 +1,10 @@
+/*
+ * File: Program.cs
+ * Purpose: Entry point for the EV Charging Station API application
+ * Author: EAD Assignment
+ * Date: 2025
+ */
+
 using EVChargingStation.Services;
 using EVChargingStation.Services.Interfaces;
 using EVChargingStation.Services.Implementations;
