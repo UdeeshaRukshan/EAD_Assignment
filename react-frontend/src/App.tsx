@@ -8,6 +8,8 @@ import EditStation from './pages/EditStation';
 import BookingManagement from './pages/BookingManagement';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
+import RegisterPage from './pages/RegistrationPage';
+import EVUserProfile from './pages/EVUserProfile';
 
 function App() {
   return (
@@ -16,6 +18,8 @@ function App() {
         <div className="min-h-screen bg-gray-50">
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path='/register' element={<RegisterPage/>}/>
+            <Route path='/profile' element={<EVUserProfile/>}/>
             <Route 
               path="/" 
               element={

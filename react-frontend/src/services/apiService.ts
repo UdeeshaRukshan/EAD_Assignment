@@ -59,6 +59,7 @@ class ApiService {
   async register(data: {
     firstName: string;
     lastName: string;
+    nic:string;
     email: string;
     phoneNumber: string;
     password: string;
@@ -66,6 +67,29 @@ class ApiService {
   }): Promise<AuthResponse> {
     const response: AxiosResponse<AuthResponse> = await this.api.post('/auth/register', data);
     return response.data;
+  }
+
+  async getProfile(): Promise<any> {
+    const response: AxiosResponse<any> = await this.api.get('/auth/profile');
+    console.log(response.data);
+    return response.data;
+  }
+
+  async updateProfile(nic: string, data: Partial<{ firstName: string; lastName: string; email: string; phoneNumber: string; password: string }>): Promise<any> {
+    const response: AxiosResponse<any> = await this.api.put(`/users/${nic}`, data);
+    return response.data;
+  }
+
+  async activateUser(nic: string): Promise<void> {
+    await this.api.patch(`/users/${nic}/activate`);
+  }
+
+  async deactivateUser(nic: string): Promise<void> {
+    await this.api.patch(`/users/${nic}/deactivate`);
+  }
+
+  async deleteUser(nic: string): Promise<void> {
+    await this.api.delete(`/users/${nic}`);
   }
 
   // Charging Stations endpoints

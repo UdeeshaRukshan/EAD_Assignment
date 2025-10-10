@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import RegisterPage from './RegistrationPage';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -11,7 +12,7 @@ const LoginPage: React.FC = () => {
 
   // Redirect if already logged in
   if (user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/profile" replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -130,6 +131,10 @@ const LoginPage: React.FC = () => {
             )}
           </button>
         </form>
+        <div className='flex justify-center'>
+          Don't have an Account. 
+          <Link to="/register" className='text-blue-400 hover:underline'>Sign Up</Link>
+        </div>
       </div>
     </div>
   );

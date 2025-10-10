@@ -40,6 +40,7 @@ public class AuthController : ControllerBase
 
             var user = new User
             {
+                NIC = request.NIC,
                 FirstName = request.FirstName,
                 LastName = request.LastName,
                 Email = request.Email,
@@ -195,6 +196,7 @@ public class AuthController : ControllerBase
 // DTOs
 public class RegisterRequest
 {
+    public string NIC { get; set; } = string.Empty;
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;

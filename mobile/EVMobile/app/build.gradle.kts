@@ -87,6 +87,7 @@ dependencies {
     implementation(libs.androidx.viewpager2)
     implementation(libs.androidx.cardview)
     implementation(libs.androidx.swiperefresh)
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
     
     // Image Loading
     implementation(libs.glide)
