@@ -1,3 +1,10 @@
+/*
+ * File: BookingsController.cs
+ * Purpose: Manages booking endpoints for the EV Charging Station API
+ * Author: EAD Assignment
+ * Date: 2024
+ */
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using EVChargingStation.Models;
@@ -20,6 +27,10 @@ public class BookingsController : ControllerBase
         _stationService = stationService;
     }
 
+    /*
+     * GET: api/bookings
+     * Retrieves all bookings
+     */
     [HttpGet]
     [Authorize(Roles = "Admin,Operator,BackofficeUser")]
     public async Task<ActionResult<IEnumerable<Booking>>> GetAllBookings()
@@ -35,6 +46,10 @@ public class BookingsController : ControllerBase
         }
     }
 
+    /*
+     * GET: api/bookings/user/{userId}
+     * Retrieves bookings for a specific user
+     */
     [HttpGet("user/{userId}")]
     public async Task<ActionResult<IEnumerable<Booking>>> GetUserBookings(string userId)
     {
@@ -58,6 +73,10 @@ public class BookingsController : ControllerBase
         }
     }
 
+    /*
+     * GET: api/bookings/station/{stationId}
+     * Retrieves bookings for a specific station
+     */
     [HttpGet("station/{stationId}")]
     [Authorize(Roles = "Admin,Operator,BackofficeUser")]
     public async Task<ActionResult<IEnumerable<Booking>>> GetStationBookings(string stationId)
@@ -86,6 +105,10 @@ public class BookingsController : ControllerBase
         }
     }
 
+    /*
+     * GET: api/bookings/pending
+     * Retrieves all pending bookings
+     */
     [HttpGet("pending")]
     [Authorize(Roles = "Admin,Operator,BackofficeUser")]
     public async Task<ActionResult<IEnumerable<Booking>>> GetPendingBookings()
@@ -101,6 +124,10 @@ public class BookingsController : ControllerBase
         }
     }
 
+    /*
+     * GET: api/bookings/{id}
+     * Retrieves a booking by ID
+     */
     [HttpGet("{id}")]
     public async Task<ActionResult<Booking>> GetBooking(string id)
     {
@@ -140,6 +167,10 @@ public class BookingsController : ControllerBase
         }
     }
 
+    /*
+     * POST: api/bookings
+     * Creates a new booking
+     */
     [HttpPost]
     public async Task<ActionResult<Booking>> CreateBooking([FromBody] CreateBookingRequest request)
     {
@@ -204,6 +235,10 @@ public class BookingsController : ControllerBase
         }
     }
 
+    /*
+     * PUT: api/bookings/{id}
+     * Updates a booking
+     */
     [HttpPut("{id}")]
     public async Task<ActionResult<Booking>> UpdateBooking(string id, [FromBody] UpdateBookingRequest request)
     {
@@ -296,6 +331,10 @@ public class BookingsController : ControllerBase
         }
     }
 
+    /*
+     * PATCH: api/bookings/{id}/confirm
+     * Confirms a booking
+     */
     [HttpPatch("{id}/confirm")]
     [Authorize(Roles = "Admin,Operator")]
     public async Task<ActionResult> ConfirmBooking(string id)
@@ -328,6 +367,10 @@ public class BookingsController : ControllerBase
         }
     }
 
+    /*
+     * PATCH: api/bookings/{id}/cancel
+     * Cancels a booking
+     */
     [HttpPatch("{id}/cancel")]
     public async Task<ActionResult> CancelBooking(string id)
     {
@@ -368,6 +411,10 @@ public class BookingsController : ControllerBase
         }
     }
 
+    /*
+     * PATCH: api/bookings/{id}/complete
+     * Completes a booking
+     */
     [HttpPatch("{id}/complete")]
     [Authorize(Roles = "Admin,Operator")]
     public async Task<ActionResult> CompleteBooking(string id, [FromBody] CompleteBookingRequest request)

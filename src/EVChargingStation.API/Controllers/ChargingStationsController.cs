@@ -1,3 +1,10 @@
+/*
+ * File: ChargingStationsController.cs
+ * Purpose: Manages charging station endpoints for the EV Charging Station API
+ * Author: EAD Assignment
+ * Date: 2024
+ */
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using EVChargingStation.Models;
@@ -18,6 +25,8 @@ public class ChargingStationsController : ControllerBase
         _stationService = stationService;
     }
 
+    // GET: api/chargingstations
+    // Retrieves all charging stations
     [HttpGet]
     [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<ChargingStation>>> GetStations()
@@ -33,6 +42,8 @@ public class ChargingStationsController : ControllerBase
         }
     }
 
+    // GET: api/chargingstations/{id}
+    // Retrieves a charging station by ID
     [HttpGet("{id}")]
     [AllowAnonymous]
     public async Task<ActionResult<ChargingStation>> GetStation(string id)
@@ -52,6 +63,8 @@ public class ChargingStationsController : ControllerBase
         }
     }
 
+    // GET: api/chargingstations/operator/{operatorId}
+    // Retrieves charging stations by operator ID
     [HttpGet("operator/{operatorId}")]
     [Authorize(Roles = "Operator,Admin")]
     public async Task<ActionResult<IEnumerable<ChargingStation>>> GetStationsByOperator(string operatorId)
@@ -67,6 +80,8 @@ public class ChargingStationsController : ControllerBase
         }
     }
 
+    // GET: api/chargingstations/nearby
+    // Retrieves nearby charging stations based on location and radius
     [HttpGet("nearby")]
     [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<ChargingStation>>> GetNearbyStations([FromQuery] double latitude, [FromQuery] double longitude, [FromQuery] double radius = 10)
@@ -82,6 +97,8 @@ public class ChargingStationsController : ControllerBase
         }
     }
 
+    // POST: api/chargingstations
+    // Creates a new charging station
     [HttpPost]
     [Authorize(Roles = "Admin,Operator")]
     public async Task<ActionResult<ChargingStation>> CreateStation([FromBody] CreateStationRequest request)
@@ -114,6 +131,8 @@ public class ChargingStationsController : ControllerBase
         }
     }
 
+    // PUT: api/chargingstations/{id}
+    // Updates a charging station
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin,Operator")]
     public async Task<ActionResult<ChargingStation>> UpdateStation(string id, [FromBody] UpdateStationRequest request)
@@ -155,6 +174,8 @@ public class ChargingStationsController : ControllerBase
         }
     }
 
+    // DELETE: api/chargingstations/{id}
+    // Deletes a charging station
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult> DeleteStation(string id)
@@ -174,6 +195,8 @@ public class ChargingStationsController : ControllerBase
         }
     }
 
+    // PATCH: api/chargingstations/{id}/status
+    // Updates the status of a charging station
     [HttpPatch("{id}/status")]
     [Authorize(Roles = "Admin,Operator")]
     public async Task<ActionResult> UpdateStationStatus(string id, [FromBody] UpdateStationStatusRequest request)
