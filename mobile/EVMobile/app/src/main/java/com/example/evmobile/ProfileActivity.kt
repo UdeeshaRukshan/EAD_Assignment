@@ -2,10 +2,7 @@ package com.example.evmobile
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Button
-import android.widget.ImageView
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import kotlinx.coroutines.CoroutineScope
@@ -34,8 +31,8 @@ class ProfileActivity : AppCompatActivity() {
     private lateinit var btnBack: ImageView
     private lateinit var btnEdit: ImageView
 
-    private var userId = ""
     private var authToken = ""
+    private var userId = ""
 
     companion object {
         private const val API_BASE_URL = "http://10.0.2.2:5105/api"
@@ -44,6 +41,7 @@ class ProfileActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_profile)
+        supportActionBar?.hide()
 
         initViews()
         loadUserSession()
@@ -74,32 +72,25 @@ class ProfileActivity : AppCompatActivity() {
     }
 
     private fun setupClickListeners() {
-        btnBack.setOnClickListener {
-            finish()
-        }
+        btnBack.setOnClickListener { finish() }
 
         btnEdit.setOnClickListener {
             showToast("Edit Profile - Coming Soon")
-            // TODO: Navigate to edit profile
         }
 
         cardEditProfile.setOnClickListener {
             showToast("Edit Profile - Coming Soon")
-            // TODO: Navigate to edit profile
         }
 
         cardChangePassword.setOnClickListener {
             showToast("Change Password - Coming Soon")
-            // TODO: Navigate to change password
         }
 
-        btnLogout.setOnClickListener {
-            performLogout()
-        }
+        btnLogout.setOnClickListener { performLogout() }
     }
 
     private fun loadProfileData() {
-        if (userId.isNotEmpty() && authToken.isNotEmpty()) {
+        if (authToken.isNotEmpty()) {
             fetchUserProfile()
             fetchUserStatistics()
         } else {
@@ -111,25 +102,20 @@ class ProfileActivity : AppCompatActivity() {
     private fun fetchUserProfile() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val url = URL("$API_BASE_URL/users/$userId")
+                val url = URL("$API_BASE_URL/auth/profile")   // ✅ correct endpoint
                 val connection = url.openConnection() as HttpURLConnection
 
                 connection.requestMethod = "GET"
                 connection.setRequestProperty("Authorization", "Bearer $authToken")
-                connection.setRequestProperty("Content-Type", "application/json")
                 connection.connectTimeout = 30000
                 connection.readTimeout = 30000
 
-                val responseCode = connection.responseCode
-
-                if (responseCode == HttpURLConnection.HTTP_OK) {
-                    val reader = BufferedReader(InputStreamReader(connection.inputStream))
-                    val response = reader.use { it.readText() }
-
+                if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+                    val response = connection.inputStream.bufferedReader().use { it.readText() }
                     parseProfileData(response)
                 } else {
                     withContext(Dispatchers.Main) {
-                        showToast("Failed to load profile data")
+                        showToast("Failed to load profile: ${connection.responseCode}")
                     }
                 }
 
@@ -143,27 +129,25 @@ class ProfileActivity : AppCompatActivity() {
 
     private suspend fun parseProfileData(jsonString: String) {
         try {
-            val jsonObject = JSONObject(jsonString)
-
-            val firstName = jsonObject.optString("firstName", "User")
-            val lastName = jsonObject.optString("lastName", "")
-            val email = jsonObject.optString("email", "N/A")
-            val phone = jsonObject.optString("phone", "N/A")
-            val address = jsonObject.optString("address", "N/A")
-            val joinDate = jsonObject.optString("createdAt", "N/A")
+            val json = JSONObject(jsonString)
+            val firstName = json.optString("firstName", "User")
+            val lastName = json.optString("lastName", "")
+            val email = json.optString("email", "N/A")
+            val phone = json.optString("phoneNumber", "N/A") // ✅ matches backend UserResponse
+            val role = json.optString("role", "")
+            val isActive = json.optBoolean("isActive", false)
 
             withContext(Dispatchers.Main) {
                 tvFirstName.text = firstName
                 tvLastName.text = lastName
                 tvEmail.text = email
                 tvPhone.text = phone
-                tvAddress.text = address
-                tvJoinDate.text = formatDate(joinDate)
+                tvAddress.text = role // you don’t return address, so show role instead
+                tvJoinDate.text = if (isActive) "Active ✅" else "Inactive ❌"
             }
-
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
-                showToast("Error parsing profile: ${e.message}")
+                showToast("Error parsing profile")
             }
         }
     }
@@ -176,16 +160,11 @@ class ProfileActivity : AppCompatActivity() {
 
                 connection.requestMethod = "GET"
                 connection.setRequestProperty("Authorization", "Bearer $authToken")
-                connection.setRequestProperty("Content-Type", "application/json")
                 connection.connectTimeout = 30000
                 connection.readTimeout = 30000
 
-                val responseCode = connection.responseCode
-
-                if (responseCode == HttpURLConnection.HTTP_OK) {
-                    val reader = BufferedReader(InputStreamReader(connection.inputStream))
-                    val response = reader.use { it.readText() }
-
+                if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+                    val response = connection.inputStream.bufferedReader().use { it.readText() }
                     parseStatisticsData(response)
                 }
 
@@ -199,14 +178,13 @@ class ProfileActivity : AppCompatActivity() {
 
     private suspend fun parseStatisticsData(jsonString: String) {
         try {
-            val bookingsArray = org.json.JSONArray(jsonString)
+            val bookings = org.json.JSONArray(jsonString)
             var totalReservations = 0
             var completedCharges = 0
 
-            for (i in 0 until bookingsArray.length()) {
-                val booking = bookingsArray.getJSONObject(i)
+            for (i in 0 until bookings.length()) {
+                val booking = bookings.getJSONObject(i)
                 val status = booking.optString("status", "").lowercase()
-
                 totalReservations++
                 if (status == "completed" || status == "finished") {
                     completedCharges++
@@ -217,7 +195,6 @@ class ProfileActivity : AppCompatActivity() {
                 tvTotalReservations.text = totalReservations.toString()
                 tvCompletedCharges.text = completedCharges.toString()
             }
-
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
                 tvTotalReservations.text = "0"
@@ -226,28 +203,16 @@ class ProfileActivity : AppCompatActivity() {
         }
     }
 
-    private fun formatDate(dateString: String): String {
-        return try {
-            val inputFormat = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.getDefault())
-            val outputFormat = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
-            val date = inputFormat.parse(dateString)
-            outputFormat.format(date ?: java.util.Date())
-        } catch (e: Exception) {
-            dateString
-        }
-    }
-
     private fun performLogout() {
         val prefs = getSharedPreferences("EVChargingApp", MODE_PRIVATE)
         prefs.edit().clear().apply()
-
         val intent = Intent(this, LoginActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         finish()
     }
 
-    private fun showToast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    private fun showToast(msg: String) {
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
     }
 }

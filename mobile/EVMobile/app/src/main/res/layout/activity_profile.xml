@@ -28,7 +28,7 @@
                 android:id="@+id/btnBack"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
-                android:src="@drawable/ic_arrow_back"
+                android:src="@android:drawable/arrow_down_float"
                 android:contentDescription="Back"
                 android:scaleType="centerInside"
                 android:padding="6dp"
@@ -65,7 +65,7 @@
             <ImageView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:src="@android:drawable/ic_menu_myplaces"
+                android:src="@android:drawable/ic_account_circle"
                 android:scaleType="centerCrop"
                 android:contentDescription="Profile Avatar"
                 app:tint="@color/text_white" />
@@ -228,7 +228,7 @@
 
             </androidx.cardview.widget.CardView>
 
-            <!-- Address Card -->
+
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -247,7 +247,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@android:drawable/ic_menu_mapmode"
-                        android:contentDescription="Address"
+                        android:contentDescription="Account Type"
                         android:layout_marginEnd="16dp"
                         app:tint="@color/primary_green" />
 
@@ -260,7 +260,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Address"
+                            android:text="Account Type"
                             android:textSize="12sp"
                             android:textColor="@color/text_secondary"
                             android:layout_marginBottom="4dp" />
@@ -312,7 +312,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Member Since"
+                            android:text="Active Status"
                             android:textSize="12sp"
                             android:textColor="@color/text_secondary"
                             android:layout_marginBottom="4dp" />
