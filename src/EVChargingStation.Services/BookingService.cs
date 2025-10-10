@@ -1,3 +1,10 @@
+/*
+ * File: BookingService.cs
+ * Purpose: Implements booking-related business logic for the EV Charging Station application
+ * Author: EAD Assignment
+ * Date: 2025
+ */
+
 using EVChargingStation.Models;
 using EVChargingStation.Services.Interfaces;
 using MongoDB.Driver;
