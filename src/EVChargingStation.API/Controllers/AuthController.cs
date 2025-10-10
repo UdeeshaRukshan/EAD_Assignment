@@ -175,9 +175,13 @@ public class AuthController : ControllerBase
                 return NotFound();
             }
 
+            Console.WriteLine($"Profile Data: {user}");
+
+
             return Ok(new UserResponse
             {
                 Id = user.Id,
+                NIC = user.NIC,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 Email = user.Email,
@@ -221,6 +225,7 @@ public class AuthResponse
 public class UserResponse
 {
     public string Id { get; set; } = string.Empty;
+    public string NIC { get; set; } = string.Empty;
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
