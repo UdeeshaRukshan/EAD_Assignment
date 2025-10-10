@@ -1,7 +1,7 @@
 ﻿/*
  * File: Models.cs
  * Purpose: Defines data models for EV Charging Station application
- * Author: EAD Assignment
+ * Author: @nxdun 
  * Date: 2025
  * Description: Contains entity models for Users, Charging Stations, Bookings,
  *              and supporting classes with MongoDB attributes.
