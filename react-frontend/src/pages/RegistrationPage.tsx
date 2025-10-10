@@ -51,8 +51,8 @@ const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-white to-blue-50">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-xl shadow-lg">
+    <div className="min-h-screen flex items-center justify-center bg-[url('/LoginBG.jpg')] bg-cover bg-center">
+      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-xl shadow-lg mt-10">
         <div className="text-center">
           <div className="flex justify-center mb-4">
             <div className="p-3 bg-green-100 rounded-full">
