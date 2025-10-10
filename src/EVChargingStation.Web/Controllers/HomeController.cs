@@ -1,3 +1,10 @@
+/*
+ * File: HomeController.cs
+ * Purpose: Handles home and error actions for the EV Charging Station Web application
+ * Author: EAD Assignment
+ * Date: 2025
+ */
+
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using EVChargingStation.Web.Models;
