@@ -4,6 +4,7 @@ VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
 EndProject
+<<<<<<< HEAD
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVChargingStation.API", "src\EVChargingStation.API\EVChargingStation.API.csproj", "{3DADA646-50FA-5735-C421-9D974BF54277}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVChargingStation.Models", "src\EVChargingStation.Models\EVChargingStation.Models.csproj", "{A2A3EFA9-6082-EB13-5438-CA365E89E1ED}"
@@ -11,6 +12,15 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVChargingStation.Services", "src\EVChargingStation.Services\EVChargingStation.Services.csproj", "{514369F2-FFF6-E186-6D8D-9359D551D2D8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVChargingStation.Web", "src\EVChargingStation.Web\EVChargingStation.Web.csproj", "{0C2EB8AE-D7D7-AB63-23BD-FC6B540B5802}"
+=======
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVChargingStation.Web", "src\EVChargingStation.Web\EVChargingStation.Web.csproj", "{0C2EB8AE-D7D7-AB63-23BD-FC6B540B5802}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVChargingStation.Services", "src\EVChargingStation.Services\EVChargingStation.Services.csproj", "{514369F2-FFF6-E186-6D8D-9359D551D2D8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVChargingStation.Models", "src\EVChargingStation.Models\EVChargingStation.Models.csproj", "{A2A3EFA9-6082-EB13-5438-CA365E89E1ED}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVChargingStation.API", "src\EVChargingStation.API\EVChargingStation.API.csproj", "{3DADA646-50FA-5735-C421-9D974BF54277}"
+>>>>>>> Feature/Udeesha
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,6 +28,7 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+<<<<<<< HEAD
 		{3DADA646-50FA-5735-C421-9D974BF54277}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3DADA646-50FA-5735-C421-9D974BF54277}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3DADA646-50FA-5735-C421-9D974BF54277}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -30,15 +41,33 @@ Global
 		{514369F2-FFF6-E186-6D8D-9359D551D2D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{514369F2-FFF6-E186-6D8D-9359D551D2D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{514369F2-FFF6-E186-6D8D-9359D551D2D8}.Release|Any CPU.Build.0 = Release|Any CPU
+=======
+>>>>>>> Feature/Udeesha
 		{0C2EB8AE-D7D7-AB63-23BD-FC6B540B5802}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0C2EB8AE-D7D7-AB63-23BD-FC6B540B5802}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0C2EB8AE-D7D7-AB63-23BD-FC6B540B5802}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0C2EB8AE-D7D7-AB63-23BD-FC6B540B5802}.Release|Any CPU.Build.0 = Release|Any CPU
+<<<<<<< HEAD
+=======
+		{514369F2-FFF6-E186-6D8D-9359D551D2D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{514369F2-FFF6-E186-6D8D-9359D551D2D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{514369F2-FFF6-E186-6D8D-9359D551D2D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{514369F2-FFF6-E186-6D8D-9359D551D2D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A2A3EFA9-6082-EB13-5438-CA365E89E1ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2A3EFA9-6082-EB13-5438-CA365E89E1ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2A3EFA9-6082-EB13-5438-CA365E89E1ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2A3EFA9-6082-EB13-5438-CA365E89E1ED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3DADA646-50FA-5735-C421-9D974BF54277}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3DADA646-50FA-5735-C421-9D974BF54277}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3DADA646-50FA-5735-C421-9D974BF54277}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3DADA646-50FA-5735-C421-9D974BF54277}.Release|Any CPU.Build.0 = Release|Any CPU
+>>>>>>> Feature/Udeesha
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+<<<<<<< HEAD
 		{3DADA646-50FA-5735-C421-9D974BF54277} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{A2A3EFA9-6082-EB13-5438-CA365E89E1ED} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{514369F2-FFF6-E186-6D8D-9359D551D2D8} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
@@ -46,5 +75,14 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A6AF2CF4-669D-4ED6-945F-C125FD8C9B3B}
+=======
+		{0C2EB8AE-D7D7-AB63-23BD-FC6B540B5802} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{514369F2-FFF6-E186-6D8D-9359D551D2D8} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{A2A3EFA9-6082-EB13-5438-CA365E89E1ED} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{3DADA646-50FA-5735-C421-9D974BF54277} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {59C0AEA6-0138-4873-AC17-C263F0637700}
+>>>>>>> Feature/Udeesha
 	EndGlobalSection
 EndGlobal
