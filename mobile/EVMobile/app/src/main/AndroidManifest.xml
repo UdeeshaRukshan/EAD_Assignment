@@ -1,22 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-    <!-- Internet permission for API calls -->
+
+    <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" /> <!-- Location permissions for maps and station finding -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /> <!-- Camera permission for QR code scanning -->
-    <uses-permission android:name="android.permission.CAMERA" /> <!-- Storage permission for caching -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="28" /> <!-- Notification permission for Android 13+ -->
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" /> <!-- Features -->
-    <uses-feature
-        android:name="android.hardware.camera"
-        android:required="false" />
-    <uses-feature
-        android:name="android.hardware.location.gps"
-        android:required="false" />
+        android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Features -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
 
     <application
         android:name=".EVChargingApplication"
@@ -30,13 +29,18 @@
         android:theme="@style/Theme.EVMobile"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
+
+        <!-- Profile -->
         <activity
             android:name=".ProfileActivity"
             android:exported="false" />
+
         <!-- Google Maps API Key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="YOUR_API_KEY_HERE" /> <!-- Splash Activity -->
+            android:value="YOUR_API_KEY_HERE" />
+
+        <!-- Splash Activity -->
         <activity
             android:name=".SplashActivity"
             android:exported="true"
@@ -44,67 +48,77 @@
             android:theme="@style/Theme.EVMobile.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity> <!-- Login Activity -->
+        </activity>
+
+        <!-- Login -->
         <activity
             android:name=".LoginActivity"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.EVMobile.NoActionBar" /> <!-- Signup Activity -->
+            android:theme="@style/Theme.EVMobile.NoActionBar" />
+
+        <!-- Signup -->
         <activity
             android:name=".SignupActivity"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.EVMobile.NoActionBar" /> <!-- Dashboard Activity -->
+            android:theme="@style/Theme.EVMobile.NoActionBar" />
+
+        <!-- Dashboard -->
         <activity
             android:name=".DashboardActivity"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.EVMobile.NoActionBar" /> <!-- Main Activity -->
+            android:theme="@style/Theme.EVMobile.NoActionBar" />
+
+        <!-- Main -->
         <activity
             android:name=".MainActivity"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.EVMobile.NoActionBar" /> <!-- Charging Stations Activity -->
+            android:theme="@style/Theme.EVMobile.NoActionBar" />
+
+        <!-- Charging Stations -->
         <activity
             android:name=".ChargingStationsActivity"
             android:exported="false"
             android:parentActivityName=".MainActivity"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.EVMobile.NoActionBar" /> <!-- Station Detail Activity -->
+            android:theme="@style/Theme.EVMobile.NoActionBar" />
+
+        <!-- Station Detail -->
         <activity
             android:name=".StationDetailActivity"
             android:exported="false"
             android:parentActivityName=".ChargingStationsActivity"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.EVMobile.NoActionBar"
-            android:parentActivityName=".ChargingStationsActivity" />
+            android:theme="@style/Theme.EVMobile.NoActionBar" />
 
-        <!-- Booking Activity -->
+        <!-- Booking -->
         <activity
             android:name=".BookingActivity"
             android:exported="false"
+            android:parentActivityName=".MainActivity"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.EVMobile.NoActionBar"
-            android:parentActivityName=".MainActivity" />
+            android:theme="@style/Theme.EVMobile.NoActionBar" />
 
-        <!-- Create Booking Activity -->
+        <!-- Create Booking -->
         <activity
             android:name=".CreateBookingActivity"
             android:exported="false"
+            android:parentActivityName=".BookingActivity"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.EVMobile.NoActionBar"
-            android:parentActivityName=".BookingActivity" />
+            android:theme="@style/Theme.EVMobile.NoActionBar" />
 
-        <!-- QR Code Activity -->
+        <!-- QR Code -->
         <activity
             android:name=".QRCodeActivity"
             android:exported="false"
+            android:parentActivityName=".BookingActivity"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.EVMobile.NoActionBar"
-            android:parentActivityName=".BookingActivity" />
+            android:theme="@style/Theme.EVMobile.NoActionBar" />
 
     </application>
 
