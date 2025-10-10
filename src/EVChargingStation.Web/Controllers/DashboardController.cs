@@ -1,3 +1,10 @@
+/*
+ * File: DashboardController.cs
+ * Purpose: Handles dashboard actions for the EV Charging Station Web application
+ * Author: EAD Assignment
+ * Date: 2025
+ */
+
 using Microsoft.AspNetCore.Mvc;
 using EVChargingStation.Web.Services;
 using EVChargingStation.Models;
