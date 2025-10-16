@@ -93,12 +93,52 @@ class CreateBookingActivity : AppCompatActivity() {
     }
     
     private fun loadStations() {
-        availableStations.clear()
-        availableStations.addAll(CreateBookingDummyData.generateStationsForBooking())
+        val repository = com.example.evmobile.data.repository.BookingRepository(this@CreateBookingActivity)
         
-        val stationNames = availableStations.map { "${it.name} (${it.distanceKm} km)" }
-        val stationAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, stationNames)
-        actvStation.setAdapter(stationAdapter)
+        // Check authentication first
+        if (!repository.isUserAuthenticated()) {
+            showAuthenticationError()
+            return
+        }
+        
+        showLoading(true)
+        
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val result = repository.getStationsForBooking()
+                
+                withContext(Dispatchers.Main) {
+                    showLoading(false)
+                    
+                    if (result.isSuccess) {
+                        val stations = result.getOrNull() ?: emptyList()
+                        availableStations.clear()
+                        availableStations.addAll(stations)
+                        
+                        val stationNames = availableStations.map { "${it.name} (${it.distanceKm?.let { "%.1f km".format(it) } ?: "-- km"})" }
+                        val stationAdapter = ArrayAdapter(this@CreateBookingActivity, android.R.layout.simple_dropdown_item_1line, stationNames)
+                        actvStation.setAdapter(stationAdapter)
+                        
+                        if (availableStations.isEmpty()) {
+                            showToast("No available stations found")
+                        }
+                    } else {
+                        val errorMessage = result.exceptionOrNull()?.message ?: "Unknown error"
+                        showToast("Failed to load stations: $errorMessage")
+                        
+                        // If authentication error, show login prompt
+                        if (errorMessage.contains("authentication", true) || errorMessage.contains("token", true)) {
+                            showAuthenticationError()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    showLoading(false)
+                    showToast("Error loading stations: ${e.message}")
+                }
+            }
+        }
     }
     
     private fun setupClickListeners() {
@@ -276,18 +316,31 @@ class CreateBookingActivity : AppCompatActivity() {
     }
     
     private fun validateForm(): Boolean {
-        val isValid = selectedStation != null &&
-                     selectedConnector != null &&
-                     startDateTime != null &&
-                     endDateTime != null &&
-                     etStartDate.text?.isNotEmpty() == true &&
-                     etStartTime.text?.isNotEmpty() == true &&
-                     etEndDate.text?.isNotEmpty() == true &&
-                     etEndTime.text?.isNotEmpty() == true &&
-                     (endDateTime?.timeInMillis ?: 0) > (startDateTime?.timeInMillis ?: 0)
+        val station = selectedStation
+        val connector = selectedConnector
+        val start = startDateTime
+        val end = endDateTime
         
-        btnCreateBooking.isEnabled = isValid
-        return isValid
+        // Basic field validation
+        if (station == null || connector == null || start == null || end == null ||
+            etStartDate.text?.isNotEmpty() != true || etStartTime.text?.isNotEmpty() != true ||
+            etEndDate.text?.isNotEmpty() != true || etEndTime.text?.isNotEmpty() != true) {
+            btnCreateBooking.isEnabled = false
+            return false
+        }
+        
+        // Validate booking creation rules
+        val validationResult = com.example.evmobile.utils.BookingValidationUtils.validateBookingCreation(
+            start.time, end.time
+        )
+        
+        if (!validationResult.isValid) {
+            btnCreateBooking.isEnabled = false
+            return false
+        }
+        
+        btnCreateBooking.isEnabled = true
+        return true
     }
     
     private fun createBooking() {
@@ -298,38 +351,34 @@ class CreateBookingActivity : AppCompatActivity() {
         
         showLoading(true)
         
-        // Simulate API call
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Get user session
-                val prefs = getSharedPreferences("EVChargingApp", MODE_PRIVATE)
-                val userId = prefs.getString("user_id", "dummy_user_123") ?: "dummy_user_123"
+                val repository = com.example.evmobile.data.repository.BookingRepository(this@CreateBookingActivity)
                 
-                // Prepare request
-                val request = CreateBookingRequest(
-                    userId = userId,
+                val result = repository.createBooking(
                     stationId = selectedStation!!.id,
                     connectorId = selectedConnector!!.id,
-                    startTime = isoFormat.format(startDateTime!!.time),
-                    endTime = isoFormat.format(endDateTime!!.time),
+                    startTime = startDateTime!!.time,
+                    endTime = endDateTime!!.time,
                     notes = etNotes.text?.toString()?.takeIf { it.isNotBlank() }
                 )
                 
-                // Simulate network delay
-                delay(2000)
-                
-                // Simulate API call
-                val response = CreateBookingDummyData.simulateCreateBooking(request)
-                
                 withContext(Dispatchers.Main) {
                     showLoading(false)
-                    showBookingSuccess(response)
+                    
+                    if (result.isSuccess) {
+                        val response = result.getOrNull()!!
+                        showBookingSuccess(response)
+                    } else {
+                        val error = result.exceptionOrNull()?.message ?: "Unknown error"
+                        showToast("Failed to create booking: $error")
+                    }
                 }
                 
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     showLoading(false)
-                    showToast("Failed to create booking. Please try again.")
+                    showToast("Failed to create booking: ${e.message}")
                 }
             }
         }
@@ -365,6 +414,24 @@ class CreateBookingActivity : AppCompatActivity() {
     
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+    
+    private fun showAuthenticationError() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Authentication Required")
+            .setMessage("Please log in to create bookings.")
+            .setPositiveButton("Login") { _, _ ->
+                // Navigate to login screen
+                val intent = android.content.Intent(this, com.example.evmobile.LoginActivity::class.java)
+                intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+                finish()
+            }
+            .setNegativeButton("Cancel") { _, _ ->
+                finish()
+            }
+            .setCancelable(false)
+            .show()
     }
     
     override fun onBackPressed() {
