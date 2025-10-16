@@ -1,3 +1,10 @@
+/*
+ * File: DatabaseSettings.cs
+ * Purpose: Defines database configuration settings for the EV Charging Station application
+ * Author: EAD Assignment
+ * Date: 2025
+ */
+
 namespace EVChargingStation.Services;
 
 public class DatabaseSettings

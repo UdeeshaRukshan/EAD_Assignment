@@ -1,4 +1,11 @@
-﻿using EVChargingStation.Models;
+﻿/*
+ * File: Interfaces.cs
+ * Purpose: Declares service interfaces for the EV Charging Station application
+ * Author: EAD Assignment
+ * Date: 2025
+ */
+
+using EVChargingStation.Models;
 
 namespace EVChargingStation.Services.Interfaces;
 

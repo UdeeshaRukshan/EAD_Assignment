@@ -1,3 +1,10 @@
+/*
+ * File: AuthController.cs
+ * Purpose: Handles authentication endpoints for the EV Charging Station API
+ * Author: EAD Assignment
+ * Date: 2025
+ */
+
 using Microsoft.AspNetCore.Mvc;
 using EVChargingStation.Models;
 using EVChargingStation.Services.Interfaces;
@@ -17,6 +24,8 @@ public class AuthController : ControllerBase
         _userService = userService;
     }
 
+    // POST: api/auth/register
+    // Handles user registration requests
     [HttpPost("register")]
     public async Task<ActionResult<AuthResponse>> Register(RegisterRequest request)
     {
@@ -31,6 +40,7 @@ public class AuthController : ControllerBase
 
             var user = new User
             {
+                NIC = request.NIC,
                 FirstName = request.FirstName,
                 LastName = request.LastName,
                 Email = request.Email,
@@ -63,6 +73,8 @@ public class AuthController : ControllerBase
         }
     }
 
+    // POST: api/auth/login
+    // Handles user login requests
     [HttpPost("login")]
     public async Task<ActionResult<AuthResponse>> Login(LoginRequest request)
     {
@@ -102,6 +114,49 @@ public class AuthController : ControllerBase
         }
     }
 
+    // POST: api/auth/refresh
+    // Handles token refresh requests
+    [HttpPost("refresh")]
+    public async Task<ActionResult<AuthResponse>> RefreshToken()
+    {
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var user = await _userService.GetUserByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var token = await _userService.GenerateJwtTokenAsync(user);
+
+            return Ok(new AuthResponse
+            {
+                Success = true,
+                Token = token,
+                User = new UserResponse
+                {
+                    Id = user.Id,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    Email = user.Email,
+                    Role = user.Role.ToString()
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    // GET: api/auth/profile
+    // Retrieves the profile of the authenticated user
     [HttpGet("profile")]
     [Authorize]
     public async Task<ActionResult<UserResponse>> GetProfile()
@@ -120,9 +175,13 @@ public class AuthController : ControllerBase
                 return NotFound();
             }
 
+            Console.WriteLine($"Profile Data: {user}");
+
+
             return Ok(new UserResponse
             {
                 Id = user.Id,
+                NIC = user.NIC,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 Email = user.Email,
@@ -141,6 +200,7 @@ public class AuthController : ControllerBase
 // DTOs
 public class RegisterRequest
 {
+    public string NIC { get; set; } = string.Empty;
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
@@ -165,6 +225,7 @@ public class AuthResponse
 public class UserResponse
 {
     public string Id { get; set; } = string.Empty;
+    public string NIC { get; set; } = string.Empty;
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;

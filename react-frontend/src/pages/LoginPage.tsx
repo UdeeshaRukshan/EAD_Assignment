@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import RegisterPage from './RegistrationPage';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -11,7 +12,7 @@ const LoginPage: React.FC = () => {
 
   // Redirect if already logged in
   if (user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/profile" replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,8 +41,8 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-green-50">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-xl shadow-lg">
+    <div className="min-h-screen flex items-center justify-center bg-[url('/LoginBG.jpg')] bg-cover bg-center">
+      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-xl shadow-lg border ">
         <div className="text-center">
           <div className="flex justify-center mb-4">
             <div className="p-3 bg-blue-100 rounded-full">
@@ -130,6 +131,10 @@ const LoginPage: React.FC = () => {
             )}
           </button>
         </form>
+        <div className='flex justify-center'>
+          Don't have an Account. 
+          <Link to="/register" className='text-blue-400 hover:underline'>Sign Up</Link>
+        </div>
       </div>
     </div>
   );

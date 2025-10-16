@@ -1,4 +1,13 @@
-﻿using MongoDB.Bson;
+﻿/*
+ * File: Models.cs
+ * Purpose: Defines data models for EV Charging Station application
+ * Author: EAD Assignment
+ * Date: 2025
+ * Description: Contains entity models for Users, Charging Stations, Bookings,
+ *              and supporting classes with MongoDB attributes.
+ */
+
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System.ComponentModel.DataAnnotations;
 
@@ -22,8 +31,11 @@ public abstract class BaseEntity
 }
 
 // User model
-public class User : BaseEntity
+public class User:BaseEntity
 {
+    [BsonElement("nic")]
+    public string NIC { get; set; } = string.Empty;
+    
     [BsonElement("firstName")]
     [Required]
     public string FirstName { get; set; } = string.Empty;
