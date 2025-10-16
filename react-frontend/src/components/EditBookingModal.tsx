@@ -31,12 +31,30 @@ const EditBookingModal: React.FC<EditBookingModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
+      const now = new Date();
+      const nowPlusHour = new Date(now.getTime() + 60 * 60 * 1000);
+      
+      // For start time, if the original booking time is less than 1 hour from now, use 1 hour from now
+      let adjustedStartTime = booking.startTime;
+      const originalStart = new Date(booking.startTime);
+      if (originalStart < nowPlusHour) {
+        adjustedStartTime = nowPlusHour.toISOString();
+      }
+      
+      // For end time, ensure it's after the adjusted start time
+      let adjustedEndTime = booking.endTime;
+      const originalEnd = new Date(booking.endTime);
+      const adjustedStart = new Date(adjustedStartTime);
+      if (originalEnd <= adjustedStart) {
+        adjustedEndTime = new Date(adjustedStart.getTime() + 30 * 60 * 1000).toISOString();
+      }
+
       // Reset form data when modal opens with properly formatted datetime values
       setFormData({
         stationId: booking.stationId,
         connectorId: booking.connectorId,
-        startTime: formatDateTimeLocal(booking.startTime),
-        endTime: formatDateTimeLocal(booking.endTime),
+        startTime: formatDateTimeLocal(adjustedStartTime),
+        endTime: formatDateTimeLocal(adjustedEndTime),
         notes: booking.notes || ''
       });
       setError('');
@@ -55,6 +73,80 @@ const EditBookingModal: React.FC<EditBookingModalProps> = ({
       stationId,
       connectorId: station?.connectors[0]?.id || ''
     }));
+  };
+
+  // Handle start time change with auto-adjustment
+  const handleStartTimeChange = (value: string) => {
+    if (!value) {
+      setFormData(prev => ({ ...prev, startTime: '' }));
+      return;
+    }
+
+    const selectedStart = new Date(value);
+    const now = new Date();
+    const nowPlusHour = new Date(now.getTime() + 60 * 60 * 1000);
+
+    // If selected time is less than 1 hour from now, adjust it
+    if (selectedStart < nowPlusHour) {
+      const adjustedTime = formatDateTimeLocal(nowPlusHour.toISOString());
+      setFormData(prev => ({ 
+        ...prev, 
+        startTime: adjustedTime,
+        // Auto-set end time to 30 minutes after adjusted start time if end time is empty or invalid
+        endTime: !prev.endTime || new Date(prev.endTime) <= nowPlusHour ? 
+          formatDateTimeLocal(new Date(nowPlusHour.getTime() + 30 * 60 * 1000).toISOString()) : 
+          prev.endTime
+      }));
+    } else {
+      setFormData(prev => ({ 
+        ...prev, 
+        startTime: value,
+        // Auto-set end time to 30 minutes after selected start time if end time is empty
+        endTime: !prev.endTime ? 
+          formatDateTimeLocal(new Date(selectedStart.getTime() + 30 * 60 * 1000).toISOString()) : 
+          prev.endTime
+      }));
+    }
+
+    // Auto-adjust end time if it becomes invalid
+    if (formData.endTime) {
+      const currentEnd = new Date(formData.endTime);
+      const newStart = selectedStart < nowPlusHour ? nowPlusHour : selectedStart;
+      
+      if (currentEnd <= newStart) {
+        // Set end time to 30 minutes after the new start time
+        const newEnd = new Date(newStart.getTime() + 30 * 60 * 1000);
+        setFormData(prev => ({ 
+          ...prev, 
+          startTime: selectedStart < nowPlusHour ? formatDateTimeLocal(nowPlusHour.toISOString()) : value,
+          endTime: formatDateTimeLocal(newEnd.toISOString())
+        }));
+      }
+    }
+  };
+
+  // Handle end time change with auto-adjustment
+  const handleEndTimeChange = (value: string) => {
+    if (!value) {
+      setFormData(prev => ({ ...prev, endTime: '' }));
+      return;
+    }
+
+    const selectedEnd = new Date(value);
+    
+    if (formData.startTime) {
+      const currentStart = new Date(formData.startTime);
+      
+      // If end time is not after start time, adjust it to 30 minutes after start
+      if (selectedEnd <= currentStart) {
+        const adjustedEnd = new Date(currentStart.getTime() + 30 * 60 * 1000);
+        setFormData(prev => ({ ...prev, endTime: formatDateTimeLocal(adjustedEnd.toISOString()) }));
+      } else {
+        setFormData(prev => ({ ...prev, endTime: value }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, endTime: value }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -197,7 +289,7 @@ const EditBookingModal: React.FC<EditBookingModalProps> = ({
               <input
                 type="datetime-local"
                 value={formData.startTime}
-                onChange={(e) => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
+                onChange={(e) => handleStartTimeChange(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
@@ -211,7 +303,8 @@ const EditBookingModal: React.FC<EditBookingModalProps> = ({
               <input
                 type="datetime-local"
                 value={formData.endTime}
-                onChange={(e) => setFormData(prev => ({ ...prev, endTime: e.target.value }))}
+                onChange={(e) => handleEndTimeChange(e.target.value)}
+                min={formData.startTime ? new Date(new Date(formData.startTime).getTime() + 30 * 60 * 1000).toISOString().slice(0, 16) : undefined}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
