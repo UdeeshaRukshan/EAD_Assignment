@@ -136,8 +136,10 @@ object BookingMapper {
      * Convert API booking to charging history
      */
     fun mapApiBookingToChargingHistory(apiBooking: ApiBooking, stationName: String, stationLocation: String): ChargingHistory? {
-        // Only convert completed bookings to charging history
-        if (apiBooking.status != ApiBookingStatus.COMPLETED.value) {
+        // Convert completed, cancelled, and no-show bookings to charging history
+        if (apiBooking.status != ApiBookingStatus.COMPLETED.value && 
+            apiBooking.status != ApiBookingStatus.CANCELLED.value && 
+            apiBooking.status != ApiBookingStatus.NO_SHOW.value) {
             return null
         }
         
@@ -153,10 +155,18 @@ object BookingMapper {
             Date(startDate.time + (2 * 60 * 60 * 1000))
         }
         
-        val chargingStatus = if (apiBooking.energyConsumed > 0) {
-            ChargingStatus.COMPLETED
-        } else {
-            ChargingStatus.INTERRUPTED
+        // Determine charging status based on booking status
+        val chargingStatus = when (apiBooking.status) {
+            ApiBookingStatus.COMPLETED.value -> {
+                if (apiBooking.energyConsumed > 0) {
+                    ChargingStatus.COMPLETED
+                } else {
+                    ChargingStatus.INTERRUPTED
+                }
+            }
+            ApiBookingStatus.CANCELLED.value -> ChargingStatus.INTERRUPTED
+            ApiBookingStatus.NO_SHOW.value -> ChargingStatus.FAILED
+            else -> ChargingStatus.FAILED
         }
         
         return ChargingHistory(

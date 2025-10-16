@@ -228,7 +228,7 @@ class CreateBookingActivity : AppCompatActivity() {
             selectedConnector = station.connectors.find { it.id == apiBooking.connectorId }
             selectedConnector?.let { connector ->
                 val availableConnectors = station.connectors.filter { it.isAvailable }
-                val connectorNames = availableConnectors.map { "${it.type} - ${it.power} (₹${it.pricePerKwh}/kWh)" }
+                val connectorNames = availableConnectors.map { "${it.type} - ${it.power} (\$${it.pricePerKwh}/kWh)" }
                 val connectorIndex = availableConnectors.indexOf(connector)
                 if (connectorIndex >= 0) {
                     actvConnector.setText(connectorNames[connectorIndex], false)
@@ -270,10 +270,7 @@ class CreateBookingActivity : AppCompatActivity() {
         // Update button text
         btnCreateBooking.text = "Update Booking"
         
-        // Update cost estimation if we have all data
-        if (selectedStation != null && selectedConnector != null && startDateTime != null && endDateTime != null) {
-            updateCostEstimation()
-        }
+        // Cost estimation removed per user request
     }
     
     private fun setupClickListeners() {
@@ -288,7 +285,7 @@ class CreateBookingActivity : AppCompatActivity() {
         actvConnector.setOnItemClickListener { _, _, position, _ ->
             selectedStation?.let { station ->
                 selectedConnector = station.connectors[position]
-                updateCostEstimation()
+                // Cost estimation removed per user request
             }
         }
         
@@ -320,7 +317,7 @@ class CreateBookingActivity : AppCompatActivity() {
             val availableConnectors = station.connectors.filter { it.isAvailable }
             
             if (availableConnectors.isNotEmpty()) {
-                val connectorNames = availableConnectors.map { "${it.type} - ${it.power} (₹${it.pricePerKwh}/kWh)" }
+                val connectorNames = availableConnectors.map { "${it.type} - ${it.power} (\$${it.pricePerKwh}/kWh)" }
                 val connectorAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, connectorNames)
                 actvConnector.setAdapter(connectorAdapter)
                 
@@ -370,7 +367,7 @@ class CreateBookingActivity : AppCompatActivity() {
                     etEndDate.setText(dateFormat.format(endDateTime!!.time))
                 }
                 
-                updateCostEstimation()
+                // Cost estimation removed per user request
                 validateForm()
             },
             calendar.get(Calendar.YEAR),
@@ -411,7 +408,7 @@ class CreateBookingActivity : AppCompatActivity() {
                     etEndTime.setText(timeFormat.format(endDateTime!!.time))
                 }
                 
-                updateCostEstimation()
+                // Cost estimation removed per user request
                 validateForm()
             },
             calendar.get(Calendar.HOUR_OF_DAY),
@@ -423,32 +420,7 @@ class CreateBookingActivity : AppCompatActivity() {
     }
     
     private fun updateCostEstimation() {
-        if (selectedConnector != null && startDateTime != null && endDateTime != null) {
-            val durationHours = (endDateTime!!.timeInMillis - startDateTime!!.timeInMillis) / (1000 * 60 * 60)
-            
-            if (durationHours > 0) {
-                // Estimate energy consumption based on connector power and duration
-                val connectorPowerKw = when {
-                    selectedConnector!!.power.contains("7") -> 7.0
-                    selectedConnector!!.power.contains("22") -> 22.0
-                    selectedConnector!!.power.contains("50") -> 50.0
-                    selectedConnector!!.power.contains("150") -> 150.0
-                    else -> 7.0
-                }
-                
-                val estimatedEnergyKwh = minOf(connectorPowerKw * durationHours, 100.0) // Cap at 100 kWh
-                val estimatedCost = estimatedEnergyKwh * selectedConnector!!.pricePerKwh
-                
-                tvEstimatedCost.text = "₹${String.format("%.2f", estimatedCost)}"
-                tvEstimatedDuration.text = "${durationHours}h ${String.format("%.1f", estimatedEnergyKwh)} kWh"
-                
-                cardCostEstimation.visibility = View.VISIBLE
-            } else {
-                cardCostEstimation.visibility = View.GONE
-            }
-        } else {
-            cardCostEstimation.visibility = View.GONE
-        }
+        // Cost estimation removed per user request
     }
     
     private fun setupFormValidation() {
