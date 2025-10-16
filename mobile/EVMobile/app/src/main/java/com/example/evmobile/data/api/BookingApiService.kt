@@ -66,6 +66,50 @@ class BookingApiService {
     }
     
     /**
+     * Get individual booking details by ID
+     */
+    suspend fun getBookingById(bookingId: String, authToken: String): Result<ApiBooking> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val url = URL("$API_BASE_URL/bookings/$bookingId")
+                val connection = url.openConnection() as HttpURLConnection
+                
+                connection.requestMethod = "GET"
+                connection.setRequestProperty("Authorization", "Bearer $authToken")
+                connection.setRequestProperty("Content-Type", "application/json")
+                connection.connectTimeout = 30000
+                connection.readTimeout = 30000
+                
+                val responseCode = connection.responseCode
+                Log.d(TAG, "getBookingById response code: $responseCode")
+                
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    val reader = BufferedReader(InputStreamReader(connection.inputStream))
+                    val response = reader.readText()
+                    reader.close()
+                    
+                    Log.d(TAG, "getBookingById response: $response")
+                    
+                    val jsonObject = JSONObject(response)
+                    val apiBooking = parseBookingFromJson(jsonObject)
+                    
+                    Result.success(apiBooking)
+                } else {
+                    val errorReader = BufferedReader(InputStreamReader(connection.errorStream ?: connection.inputStream))
+                    val errorResponse = errorReader.readText()
+                    errorReader.close()
+                    
+                    Log.e(TAG, "getBookingById error: $responseCode - $errorResponse")
+                    Result.failure(Exception("Failed to get booking details: $errorResponse"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "getBookingById exception", e)
+                Result.failure(e)
+            }
+        }
+    }
+    
+    /**
      * Create a new booking
      */
     suspend fun createBooking(request: CreateBookingApiRequest, authToken: String): Result<CreateBookingApiResponse> {

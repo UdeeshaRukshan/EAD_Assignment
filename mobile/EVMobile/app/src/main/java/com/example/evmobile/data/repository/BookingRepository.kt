@@ -124,6 +124,45 @@ class BookingRepository(private val context: Context) {
     }
     
     /**
+     * Get individual booking details by ID
+     */
+    suspend fun getBookingById(bookingId: String): Result<Booking> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val authToken = getAuthToken()
+                
+                if (authToken.isNullOrBlank()) {
+                    return@withContext Result.failure(Exception("User not authenticated"))
+                }
+                
+                val result = bookingApiService.getBookingById(bookingId, authToken)
+                
+                if (result.isSuccess) {
+                    val apiBooking = result.getOrNull()!!
+                    
+                    // Get station details for mapping
+                    val stationsResult = getStationsForBooking()
+                    val stations = stationsResult.getOrNull() ?: emptyList()
+                    val station = stations.find { it.id == apiBooking.stationId }
+                    
+                    val stationName = station?.name ?: "Unknown Station"
+                    val stationLocation = station?.location ?: "Unknown Location"
+                    
+                    val booking = BookingMapper.mapApiBookingToBooking(
+                        apiBooking, stationName, stationLocation
+                    )
+                    
+                    Result.success(booking)
+                } else {
+                    Result.failure(result.exceptionOrNull() ?: Exception("Failed to fetch booking details"))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+    
+    /**
      * Get available charging stations for booking
      */
     suspend fun getStationsForBooking(): Result<List<StationForBooking>> {

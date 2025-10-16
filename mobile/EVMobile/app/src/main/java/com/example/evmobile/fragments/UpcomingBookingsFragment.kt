@@ -59,8 +59,15 @@ class UpcomingBookingsFragment : Fragment() {
             onModifyClick = { booking ->
                 val validationResult = com.example.evmobile.utils.BookingValidationUtils.validateBookingModification(booking)
                 if (validationResult.isValid) {
-                    showToast("Modify booking for ${booking.stationName}")
-                    // TODO: Navigate to modify booking screen
+                    // Navigate to modify booking screen - only pass booking ID, the complete details will be fetched from API
+                    val intent = Intent(requireContext(), CreateBookingActivity::class.java).apply {
+                        putExtra(CreateBookingActivity.EXTRA_BOOKING_ID, booking.id)
+                    }
+                    startActivityForResult(intent, MODIFY_BOOKING_REQUEST_CODE)
+                    requireActivity().overridePendingTransition(
+                        com.example.evmobile.R.anim.slide_in_right,
+                        com.example.evmobile.R.anim.slide_out_left
+                    )
                 } else {
                     showToast(validationResult.message)
                 }
@@ -98,6 +105,7 @@ class UpcomingBookingsFragment : Fragment() {
     
     companion object {
         private const val CREATE_BOOKING_REQUEST_CODE = 1001
+        private const val MODIFY_BOOKING_REQUEST_CODE = 1002
     }
     
     private fun loadBookings() {
@@ -241,10 +249,19 @@ class UpcomingBookingsFragment : Fragment() {
     
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == CREATE_BOOKING_REQUEST_CODE && resultCode == android.app.Activity.RESULT_OK) {
-            // Refresh the bookings list
-            loadBookings()
-            showToast("Booking created successfully!")
+        if (resultCode == android.app.Activity.RESULT_OK) {
+            when (requestCode) {
+                CREATE_BOOKING_REQUEST_CODE -> {
+                    // Refresh the bookings list
+                    loadBookings()
+                    showToast("Booking created successfully!")
+                }
+                MODIFY_BOOKING_REQUEST_CODE -> {
+                    // Refresh the bookings list
+                    loadBookings()
+                    showToast("Booking updated successfully!")
+                }
+            }
         }
     }
 }
