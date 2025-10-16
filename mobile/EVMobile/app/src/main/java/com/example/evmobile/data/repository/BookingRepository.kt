@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import com.example.evmobile.data.api.BookingApiService
 import com.example.evmobile.data.mappers.BookingMapper
 import com.example.evmobile.models.*
+import com.example.evmobile.utils.BookingValidationUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.*
@@ -291,6 +292,12 @@ class BookingRepository(private val context: Context) {
                     return@withContext Result.failure(Exception("Booking can only be modified at least 12 hours before start time"))
                 }
                 
+                // Validate new booking times follow the 7-day rule and other constraints
+                val bookingValidation = BookingValidationUtils.validateBookingCreation(startTime, endTime)
+                if (!bookingValidation.isValid) {
+                    return@withContext Result.failure(Exception(bookingValidation.message))
+                }
+                
                 val apiRequest = BookingMapper.mapUpdateBookingRequestToApi(
                     stationId, connectorId, startTime, endTime, notes
                 )
@@ -331,6 +338,19 @@ class BookingRepository(private val context: Context) {
                 
                 if (authToken.isNullOrBlank()) {
                     return@withContext Result.failure(Exception("User not authenticated"))
+                }
+                
+                // First, get the booking details to validate cancellation timing
+                val bookingResult = bookingApiService.getBookingById(bookingId, authToken)
+                
+                if (bookingResult.isSuccess) {
+                    val apiBooking = bookingResult.getOrNull()!!
+                    
+                    // Validate 12-hour cancellation rule
+                    val validationResult = BookingValidationUtils.validateBookingCancellation(apiBooking)
+                    if (!validationResult.isValid) {
+                        return@withContext Result.failure(Exception(validationResult.message))
+                    }
                 }
                 
                 val result = bookingApiService.cancelBooking(bookingId, authToken)

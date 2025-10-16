@@ -337,6 +337,10 @@ class CreateBookingActivity : AppCompatActivity() {
         // Set minimum date to today
         val minDate = Calendar.getInstance()
         
+        // Set maximum date to 7 days from today
+        val maxDate = Calendar.getInstance()
+        maxDate.add(Calendar.DAY_OF_MONTH, 7)
+        
         // Set default date based on selection
         if (isStartDate && startDateTime != null) {
             calendar.time = startDateTime!!.time
@@ -376,6 +380,7 @@ class CreateBookingActivity : AppCompatActivity() {
         )
         
         datePickerDialog.datePicker.minDate = minDate.timeInMillis
+        datePickerDialog.datePicker.maxDate = maxDate.timeInMillis
         datePickerDialog.show()
     }
     
@@ -442,10 +447,18 @@ class CreateBookingActivity : AppCompatActivity() {
             return false
         }
         
-        // Validate booking creation rules
-        val validationResult = com.example.evmobile.utils.BookingValidationUtils.validateBookingCreation(
-            start.time, end.time
-        )
+        // Apply appropriate validation based on mode
+        val validationResult = if (isModificationMode) {
+            // For modification: validate the new booking time still follows the 7-day rule and basic constraints
+            com.example.evmobile.utils.BookingValidationUtils.validateBookingCreation(
+                start.time, end.time
+            )
+        } else {
+            // For creation: standard booking creation validation
+            com.example.evmobile.utils.BookingValidationUtils.validateBookingCreation(
+                start.time, end.time
+            )
+        }
         
         if (!validationResult.isValid) {
             btnCreateBooking.isEnabled = false
