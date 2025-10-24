@@ -1,6 +1,7 @@
 package com.example.evmobile
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -20,9 +21,14 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 class SignupActivity : AppCompatActivity() {
-    
+
     companion object {
-        private const val API_BASE_URL = "http://10.0.2.2:5105/api" // Use 10.0.2.2 for emulator
+        private val API_BASE_URL = if (Build.FINGERPRINT.contains("generic") ||
+            Build.FINGERPRINT.contains("emulator")) {
+            "http://10.0.2.2:5105/api"        // Emulator
+        } else {
+            "http://192.168.43.28:5105/api"   // Physical Device
+        }
     }
     
     private lateinit var tilFirstName: TextInputLayout

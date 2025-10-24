@@ -1,5 +1,6 @@
 package com.example.evmobile.data.api
 
+import android.os.Build
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -20,14 +21,20 @@ import com.example.evmobile.models.*
 class BookingApiService {
     
     companion object {
-        private const val API_BASE_URL = "http://10.0.2.2:5105/api"
-        private const val TAG = "BookingApiService"
-        
-        // Date formatters for API communication
-        private val apiDateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()).apply {
-            timeZone = TimeZone.getTimeZone("UTC")
-        }
+    private val API_BASE_URL = if (Build.FINGERPRINT.contains("generic") ||
+                   Build.FINGERPRINT.contains("emulator")) {
+        "http://10.0.2.2:5105/api"        // Emulator
+    } else {
+        "http://192.168.43.28:5105/api"   // Physical Device  
     }
+    
+    private const val TAG = "BookingApiService"
+    
+    // Date formatters for API communication
+    private val apiDateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()).apply {
+        timeZone = TimeZone.getTimeZone("UTC")
+    }
+}
     
     /**
      * Get all bookings for the current user
