@@ -497,7 +497,15 @@ class CreateBookingActivity : AppCompatActivity() {
                         showBookingSuccess(response)
                     } else {
                         val error = result.exceptionOrNull()?.message ?: "Unknown error"
-                        showToast("Failed to create booking: $error")
+                        
+                        // Check if error is related to booking overlap
+                        if (error.contains("already booked", ignoreCase = true) || 
+                            error.contains("overlap", ignoreCase = true) ||
+                            error.contains("time slot", ignoreCase = true)) {
+                            showOverlapErrorDialog()
+                        } else {
+                            showToast("Failed to create booking: $error")
+                        }
                     }
                 }
                 
@@ -538,7 +546,15 @@ class CreateBookingActivity : AppCompatActivity() {
                         showUpdateSuccess()
                     } else {
                         val error = result.exceptionOrNull()?.message ?: "Unknown error"
-                        showToast("Failed to update booking: $error")
+                        
+                        // Check if error is related to booking overlap
+                        if (error.contains("already booked", ignoreCase = true) || 
+                            error.contains("overlap", ignoreCase = true) ||
+                            error.contains("time slot", ignoreCase = true)) {
+                            showOverlapErrorDialog()
+                        } else {
+                            showToast("Failed to update booking: $error")
+                        }
                     }
                 }
                 
@@ -595,6 +611,48 @@ class CreateBookingActivity : AppCompatActivity() {
             }
             .setCancelable(false)
             .show()
+    }
+    
+    private fun showOverlapErrorDialog() {
+        val message = """
+            ⚠️ Time Slot Already Booked
+            
+            The selected time slot is already reserved by another user for this connector.
+            
+            Please select a different:
+            • Date and time
+            • Connector type
+            • Charging station
+            
+            Tip: Check the station's availability before booking!
+        """.trimIndent()
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Booking Conflict")
+            .setMessage(message)
+            .setPositiveButton("Choose Different Time") { dialog, _ ->
+                dialog.dismiss()
+                // Keep form filled, just let user change times
+            }
+            .setNegativeButton("Change Station") { dialog, _ ->
+                dialog.dismiss()
+                // Clear station selection to let user select a different one
+                actvStation.text.clear()
+                actvConnector.text.clear()
+                selectedStation = null
+                selectedConnector = null
+                cardConnector.visibility = View.GONE
+                tvStationDetails.visibility = View.GONE
+            }
+            .setCancelable(true)
+            .show()
+        
+        // Also show a toast for quick feedback
+        Toast.makeText(
+            this, 
+            "⚠️ This time slot is already booked. Please choose a different time.", 
+            Toast.LENGTH_LONG
+        ).show()
     }
     
     private fun showLoading(show: Boolean) {
