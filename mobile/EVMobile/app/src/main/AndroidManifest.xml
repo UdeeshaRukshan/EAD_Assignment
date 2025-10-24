@@ -120,6 +120,14 @@
             android:screenOrientation="portrait"
             android:theme="@style/Theme.EVMobile.NoActionBar" />
 
+        <!-- QR Scanner -->
+        <activity
+            android:name=".QRScannerActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.EVMobile.NoActionBar" />
+
     </application>
 
 </manifest>

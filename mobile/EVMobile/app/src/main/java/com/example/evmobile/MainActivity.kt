@@ -38,8 +38,7 @@ class MainActivity : AppCompatActivity() {
         }
         
         findViewById<CardView>(R.id.cardQRScanner).setOnClickListener {
-            showToast("QR Scanner")
-            // TODO: Navigate to QR scanner
+            navigateToQRScanner()
         }
         
         findViewById<CardView>(R.id.cardSettings).setOnClickListener {
@@ -72,6 +71,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun navigateToBookings() {
         val intent = Intent(this, BookingActivity::class.java)
+        startActivity(intent)
+        overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+    }
+    
+    private fun navigateToQRScanner() {
+        val intent = Intent(this, QRScannerActivity::class.java)
         startActivity(intent)
         overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
     }

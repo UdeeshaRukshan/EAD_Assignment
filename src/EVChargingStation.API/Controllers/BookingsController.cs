@@ -149,14 +149,15 @@ public class BookingsController : ControllerBase
                 {
                     return Forbid();
                 }
-                else if (userRole == "Operator")
-                {
-                    var station = await _stationService.GetStationByIdAsync(booking.StationId);
-                    if (station == null || station.OperatorId != userId)
-                    {
-                        return Forbid();
-                    }
-                }
+                // Allow all Operators to view any booking (station ownership not enforced)
+                // else if (userRole == "Operator")
+                // {
+                //     var station = await _stationService.GetStationByIdAsync(booking.StationId);
+                //     if (station == null || station.OperatorId != userId)
+                //     {
+                //         return Forbid();
+                //     }
+                // }
             }
 
             return Ok(booking);
