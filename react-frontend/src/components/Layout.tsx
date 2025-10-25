@@ -15,6 +15,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     navigate('/login');
   };
 
+  const handleProfileClick = () => {
+    navigate('/profile');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navigation */}
@@ -77,17 +81,35 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
 
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 text-sm text-gray-700">
-                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                  <span className="text-blue-600 font-medium">
-                    {user?.firstName?.[0]}{user?.lastName?.[0]}
-                  </span>
+              {user?.role === 'EVOwner' ? (
+                <button
+                  onClick={handleProfileClick}
+                  className="flex items-center space-x-2 text-sm text-gray-700 focus:outline-none hover:bg-blue-50 rounded px-2 py-1 transition"
+                  title="View Profile"
+                >
+                  <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                    <span className="text-blue-600 font-medium">
+                      {user?.firstName?.[0]}{user?.lastName?.[0]}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-medium">{user?.firstName} {user?.lastName}</p>
+                    <p className="text-xs text-gray-500">{user?.role}</p>
+                  </div>
+                </button>
+              ) : (
+                <div className="flex items-center space-x-2 text-sm text-gray-700 px-2 py-1">
+                  <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                    <span className="text-blue-600 font-medium">
+                      {user?.firstName?.[0]}{user?.lastName?.[0]}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-medium">{user?.firstName} {user?.lastName}</p>
+                    <p className="text-xs text-gray-500">{user?.role}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium">{user?.firstName} {user?.lastName}</p>
-                  <p className="text-xs text-gray-500">{user?.role}</p>
-                </div>
-              </div>
+              )}
               <button
                 onClick={handleLogout}
                 className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
