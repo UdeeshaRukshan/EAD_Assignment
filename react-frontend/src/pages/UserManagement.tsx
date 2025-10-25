@@ -141,55 +141,62 @@ const UserManagement: React.FC = () => {
       } else {
         setError(err.response?.data?.message || 'Failed to delete user. Please try again.');
       }
-      console.error('Delete user error:', err);
+      console.error('Delete user error:', err)  ;
     }
   };
 
   const handleReactivateUser = async (userId: string, userName: string) => {
+    // Find NIC for the user
+    const user = users.find(u => u.id === userId);
+    const nic = user?.nic || userId;
     if (!confirm(`Reactivate account for ${userName}?`)) {
       return;
     }
 
     try {
       setError('');
-      await apiService.reactivateUser(userId);
+      await apiService.reactivateUser(nic);
       setSuccess('User reactivated successfully');
       await loadUsers();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      
+      const status = err.response?.status;
+      if (status === 401) {
+        setError('Session expired. Please log in again.');
+      } else if (status === 403) {
+        setError('Access Denied: You do not have permission to reactivate users.');
+      } else if (status === 404) {
+        setError('Backend Error: PATCH /api/auth/users/{nic}/reactivate endpoint not found. The reactivate user endpoint is not implemented on the backend.');
+      } else {
+        setError(err.response?.data?.message || 'Failed to reactivate user. Please try again.');
+      }
       console.error('Reactivate user error:', err);
     }
   };
 
   const handleDeactivateUser = async (userId: string, userName: string) => {
+    // Find NIC for the user
+    const user = users.find(u => u.id === userId);
+    const nic = user?.nic || userId;
     if (!confirm(`Deactivate account for ${userName}? The user will no longer be able to log in until reactivated.`)) {
       return;
     }
 
     try {
       setError('');
-      await apiService.deactivateUserByAdmin(userId);
+      await apiService.deactivateUserByAdmin(nic);
       setSuccess('User deactivated successfully');
       await loadUsers();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       const status = err.response?.status;
       const responseData = err.response?.data;
-      
-      console.error('Deactivate error details:', {
-        status,
-        statusText: err.response?.statusText,
-        data: responseData,
-        message: err.message
-      });
-      
       if (status === 401) {
         setError('Session expired. Please log in again.');
       } else if (status === 403) {
         setError('Access Denied: You do not have permission to deactivate users.');
       } else if (status === 404) {
-        setError(`Backend Error: The deactivate endpoint returned 404. Please check: 1) Backend is running, 2) User ID is valid, 3) Backend logs for errors.`);
+        setError('Backend Error: PATCH /api/auth/users/{nic}/deactivate endpoint not found. The deactivate user endpoint is not implemented on the backend.');
       } else if (status === 400) {
         setError(responseData?.message || 'Bad Request: ' + JSON.stringify(responseData));
       } else if (status === 500) {
@@ -405,8 +412,9 @@ const UserManagement: React.FC = () => {
                       <div className="flex justify-end space-x-2">
                         <button
                           onClick={() => handleEditUser(user)}
-                          className="text-blue-600 hover:text-blue-900"
-                          title="Edit User"
+                          className={user.role === 'Admin' ? 'text-gray-400 cursor-not-allowed bg-gray-100' : 'text-blue-600 hover:text-blue-900'}
+                          title={user.role === 'Admin' ? 'Editing Admins is not allowed' : 'Edit User'}
+                          disabled={user.role === 'Admin'}
                         >
                           <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
