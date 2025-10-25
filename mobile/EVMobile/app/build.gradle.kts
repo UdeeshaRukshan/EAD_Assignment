@@ -93,8 +93,8 @@ dependencies {
     implementation(libs.glide)
     kapt(libs.glide.compiler)
     
-    // Maps and Location
-    implementation(libs.google.maps)
+    // Maps and Location - Using OpenStreetMap (Osmdroid)
+    implementation("org.osmdroid:osmdroid-android:6.1.18")
     implementation(libs.google.location)
     
     // QR Code

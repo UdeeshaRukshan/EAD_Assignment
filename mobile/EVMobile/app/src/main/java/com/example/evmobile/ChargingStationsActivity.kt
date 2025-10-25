@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
+import android.preference.PreferenceManager
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -18,18 +19,23 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
-import com.google.android.gms.maps.*
-import com.google.android.gms.maps.model.*
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.*
 import org.json.JSONArray
 import org.json.JSONObject
+import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
+import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
 
-class ChargingStationsActivity : AppCompatActivity(), OnMapReadyCallback {
+class ChargingStationsActivity : AppCompatActivity() {
 
     private lateinit var swipeRefresh: SwipeRefreshLayout
     private lateinit var recyclerView: RecyclerView
@@ -38,9 +44,9 @@ class ChargingStationsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var progressBar: ProgressBar
     private lateinit var emptyView: LinearLayout
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var myLocationOverlay: MyLocationNewOverlay
     
     private lateinit var stationsAdapter: ChargingStationsAdapter
-    private lateinit var googleMap: GoogleMap
     
     private var isMapView = false
     private var stationsList = mutableListOf<ChargingStationModel>()
@@ -48,24 +54,22 @@ class ChargingStationsActivity : AppCompatActivity(), OnMapReadyCallback {
     
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1001
-        private const val MAPVIEW_BUNDLE_KEY = "MapViewBundleKey"
-        private const val API_BASE_URL = "http://localhost:5105/api" // Use 10.0.2.2 for emulator
+        private const val API_BASE_URL = "http://10.0.2.2:5105/api" // Use 10.0.2.2 for emulator
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Initialize osmdroid configuration
+        Configuration.getInstance().load(this, PreferenceManager.getDefaultSharedPreferences(this))
+        
         setContentView(R.layout.activity_charging_stations)
         
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         
-        var mapViewBundle: Bundle? = null
-        if (savedInstanceState != null) {
-            mapViewBundle = savedInstanceState.getBundle(MAPVIEW_BUNDLE_KEY)
-        }
-        
         initViews()
         setupRecyclerView()
-        setupMapView(mapViewBundle)
+        setupMapView()
         setupListeners()
         checkLocationPermission()
         
@@ -89,9 +93,21 @@ class ChargingStationsActivity : AppCompatActivity(), OnMapReadyCallback {
         recyclerView.adapter = stationsAdapter
     }
     
-    private fun setupMapView(mapViewBundle: Bundle?) {
-        mapView.onCreate(mapViewBundle)
-        mapView.getMapAsync(this)
+    private fun setupMapView() {
+        // Configure map
+        mapView.setTileSource(TileSourceFactory.MAPNIK)
+        mapView.setMultiTouchControls(true)
+        mapView.setBuiltInZoomControls(true)
+        
+        // Set default location (Colombo, Sri Lanka)
+        val startPoint = GeoPoint(6.9271, 79.8612)
+        mapView.controller.setZoom(13.0)
+        mapView.controller.setCenter(startPoint)
+        
+        // Add my location overlay
+        myLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(this), mapView)
+        myLocationOverlay.enableMyLocation()
+        mapView.overlays.add(myLocationOverlay)
     }
     
     private fun setupListeners() {
@@ -342,9 +358,7 @@ class ChargingStationsActivity : AppCompatActivity(), OnMapReadyCallback {
         stationsAdapter.notifyDataSetChanged()
         
         // Update map markers
-        if (::googleMap.isInitialized) {
-            updateMapMarkers()
-        }
+        updateMapMarkers()
         
         // Show/hide empty view
         if (stations.isEmpty()) {
@@ -356,76 +370,58 @@ class ChargingStationsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
     
-    override fun onMapReady(map: GoogleMap) {
-        googleMap = map
-        
-        with(googleMap) {
-            mapType = GoogleMap.MAP_TYPE_NORMAL
-            uiSettings.isZoomControlsEnabled = true
-            uiSettings.isCompassEnabled = true
-            uiSettings.isMyLocationButtonEnabled = true
-        }
-        
-        updateMapMarkers()
-        getCurrentLocationAndCenterMap()
-        
-        googleMap.setOnMarkerClickListener { marker ->
-            val station = marker.tag as? ChargingStationModel
-            station?.let { openStationDetails(it) }
-            true
-        }
-    }
-    
     private fun updateMapMarkers() {
-        googleMap.clear()
+        // Clear existing markers (keep location overlay)
+        val overlaysToKeep = mapView.overlays.filter { it is MyLocationNewOverlay }
+        mapView.overlays.clear()
+        mapView.overlays.addAll(overlaysToKeep)
         
+        if (stationsList.isEmpty()) {
+            mapView.invalidate()
+            return
+        }
+        
+        // Add markers for each station
         stationsList.forEach { station ->
-            val marker = googleMap.addMarker(
-                MarkerOptions()
-                    .position(LatLng(station.latitude, station.longitude))
-                    .title(station.name)
-                    .snippet("${station.availableSlots}/${station.totalSlots} available")
-                    .icon(getStationMarkerIcon(station))
-            )
-            marker?.tag = station
+            val marker = Marker(mapView)
+            marker.position = GeoPoint(station.latitude, station.longitude)
+            marker.title = station.name
+            marker.snippet = "${station.availableSlots}/${station.totalSlots} available"
+            marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+            
+            // Set marker click listener
+            marker.setOnMarkerClickListener { clickedMarker, _ ->
+                openStationDetails(station)
+                true
+            }
+            
+            mapView.overlays.add(marker)
         }
         
-        // Fit all markers in view
-        if (stationsList.isNotEmpty()) {
-            val builder = LatLngBounds.Builder()
+        // Center map to show all stations
+        if (stationsList.size == 1) {
+            val station = stationsList[0]
+            mapView.controller.animateTo(GeoPoint(station.latitude, station.longitude))
+        } else if (stationsList.size > 1) {
+            // Calculate bounding box
+            var minLat = stationsList[0].latitude
+            var maxLat = stationsList[0].latitude
+            var minLon = stationsList[0].longitude
+            var maxLon = stationsList[0].longitude
+            
             stationsList.forEach { station ->
-                builder.include(LatLng(station.latitude, station.longitude))
+                minLat = minOf(minLat, station.latitude)
+                maxLat = maxOf(maxLat, station.latitude)
+                minLon = minOf(minLon, station.longitude)
+                maxLon = maxOf(maxLon, station.longitude)
             }
-            val bounds = builder.build()
-            val padding = 100
-            googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, padding))
-        }
-    }
-    
-    private fun getStationMarkerIcon(station: ChargingStationModel): BitmapDescriptor {
-        return when {
-            !station.isActive -> BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
-            station.availableSlots > 0 -> BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
-            else -> BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)
-        }
-    }
-    
-    private fun getCurrentLocationAndCenterMap() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) 
-            == PackageManager.PERMISSION_GRANTED) {
             
-            googleMap.isMyLocationEnabled = true
-            
-            fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
-                location?.let {
-                    currentLocation = it
-                    val userLatLng = LatLng(it.latitude, it.longitude)
-                    if (stationsList.isEmpty()) {
-                        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLatLng, 14f))
-                    }
-                }
-            }
+            val centerLat = (minLat + maxLat) / 2
+            val centerLon = (minLon + maxLon) / 2
+            mapView.controller.setCenter(GeoPoint(centerLat, centerLon))
         }
+        
+        mapView.invalidate()
     }
     
     private fun checkLocationPermission() {
@@ -437,6 +433,11 @@ class ChargingStationsActivity : AppCompatActivity(), OnMapReadyCallback {
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
                 LOCATION_PERMISSION_REQUEST_CODE
             )
+        } else {
+            // Enable location overlay
+            if (::myLocationOverlay.isInitialized) {
+                myLocationOverlay.enableMyLocation()
+            }
         }
     }
     
@@ -449,7 +450,20 @@ class ChargingStationsActivity : AppCompatActivity(), OnMapReadyCallback {
         
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                getCurrentLocationAndCenterMap()
+                if (::myLocationOverlay.isInitialized) {
+                    myLocationOverlay.enableMyLocation()
+                    
+                    // Center on user location if no stations loaded yet
+                    if (stationsList.isEmpty()) {
+                        fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
+                            location?.let {
+                                currentLocation = it
+                                val userLocation = GeoPoint(it.latitude, it.longitude)
+                                mapView.controller.animateTo(userLocation)
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -480,40 +494,8 @@ class ChargingStationsActivity : AppCompatActivity(), OnMapReadyCallback {
         mapView.onResume()
     }
     
-    override fun onStart() {
-        super.onStart()
-        mapView.onStart()
-    }
-    
-    override fun onStop() {
-        super.onStop()
-        mapView.onStop()
-    }
-    
     override fun onPause() {
-        mapView.onPause()
         super.onPause()
-    }
-    
-    override fun onDestroy() {
-        mapView.onDestroy()
-        super.onDestroy()
-    }
-    
-    override fun onLowMemory() {
-        super.onLowMemory()
-        mapView.onLowMemory()
-    }
-    
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        
-        var mapViewBundle = outState.getBundle(MAPVIEW_BUNDLE_KEY)
-        if (mapViewBundle == null) {
-            mapViewBundle = Bundle()
-            outState.putBundle(MAPVIEW_BUNDLE_KEY, mapViewBundle)
-        }
-        
-        mapView.onSaveInstanceState(mapViewBundle)
+        mapView.onPause()
     }
 }

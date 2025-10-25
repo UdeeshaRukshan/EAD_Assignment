@@ -42,9 +42,9 @@ public class UserService : IUserService
         return await _users.Find(user => !user.IsDeleted).ToListAsync();
     }
 
-    public async Task<User?> GetUserByIdAsync(string nic)
+    public async Task<User?> GetUserByIdAsync(string id)
     {
-        return await _users.Find(user => user.NIC == nic && !user.IsDeleted).FirstOrDefaultAsync();
+        return await _users.Find(user => user.Id == id && !user.IsDeleted).FirstOrDefaultAsync();
     }
 
     public async Task<User?> GetUserByNICAsync(string nic)
@@ -94,10 +94,11 @@ public class UserService : IUserService
         {
             Subject = new ClaimsIdentity(new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, user.NIC),
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.Name, $"{user.FirstName} {user.LastName}"),
-                new Claim(ClaimTypes.Role, user.Role.ToString())
+                new Claim(ClaimTypes.Role, user.Role.ToString()),
+                new Claim("nic", user.NIC) // Add NIC as a separate claim if needed
             }),
             Expires = DateTime.UtcNow.AddDays(7),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
