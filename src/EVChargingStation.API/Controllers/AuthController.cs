@@ -234,6 +234,40 @@ public class AuthController : ControllerBase
             _logger.LogDebug("GetProfile endpoint finished");
         }
     }
+
+    // PATCH: api/auth/deactivate
+    // Deactivates the current user's account (sets IsActive to false, does not delete)
+    [HttpPatch("deactivate")]
+    [Authorize]
+    public async Task<IActionResult> DeactivateAccount()
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId))
+        {
+            _logger.LogWarning("DeactivateAccount failed: No user id found in claims");
+            return Unauthorized();
+        }
+        var user = await _userService.GetUserByIdAsync(userId);
+        if (user == null)
+        {
+            _logger.LogWarning("DeactivateAccount failed: User not found for id {UserId}", userId);
+            return NotFound();
+        }
+        if (user.Role == UserRole.Admin)
+        {
+            _logger.LogWarning("DeactivateAccount forbidden: Admin cannot be deactivated (id: {UserId})", userId);
+            return Forbid();
+        }
+        if (!user.IsActive)
+        {
+            _logger.LogInformation("DeactivateAccount: User already deactivated (id: {UserId})", userId);
+            return Ok(new { message = "Account is already deactivated." });
+        }
+        user.IsActive = false;
+        await _userService.UpdateUserAsync(user);
+        _logger.LogInformation("Account deactivated for user id: {UserId}", userId);
+        return Ok(new { message = "Account has been deactivated." });
+    }
 }
 
 // DTOs
