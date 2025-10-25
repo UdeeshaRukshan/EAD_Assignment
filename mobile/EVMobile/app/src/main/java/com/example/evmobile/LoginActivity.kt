@@ -5,8 +5,11 @@ import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import com.example.evmobile.database.AppDatabase
+import com.example.evmobile.models.UserEntity
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.CoroutineScope
@@ -27,7 +30,7 @@ class LoginActivity : AppCompatActivity() {
                    Build.FINGERPRINT.contains("emulator")) {
         "http://10.0.2.2:5105/api"        // Emulator
     } else {
-        "http://192.168.43.28:5105/api"   // Physical Device  
+        "http://192.168.43.28:5105/api"   // Physical Device
     }
 }
     
@@ -158,6 +161,7 @@ class LoginActivity : AppCompatActivity() {
     private fun loginUserViaAPI(email: String, password: String) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
+                Log.d("LOGIN_DEBUG", "Trying to connect to $API_BASE_URL/auth/login")
                 val url = URL("$API_BASE_URL/auth/login")
                 val connection = url.openConnection() as HttpURLConnection
                 
@@ -173,6 +177,8 @@ class LoginActivity : AppCompatActivity() {
                     put("email", email)
                     put("password", password)
                 }
+
+                Log.d("LOGIN_DEBUG", "Request Body: $jsonRequest")
                 
                 // Write request body
                 val writer = OutputStreamWriter(connection.outputStream)
@@ -181,10 +187,12 @@ class LoginActivity : AppCompatActivity() {
                 writer.close()
                 
                 val responseCode = connection.responseCode
+                Log.d("LOGIN_DEBUG", "Response Code: $responseCode")
                 
                 if (responseCode == HttpURLConnection.HTTP_OK) {
                     val reader = BufferedReader(InputStreamReader(connection.inputStream))
                     val response = reader.use { it.readText() }
+                    Log.d("LOGIN_DEBUG", "Response Body: $response")
                     
                     val jsonResponse = JSONObject(response)
                     val success = jsonResponse.optBoolean("success", false)
@@ -207,6 +215,26 @@ class LoginActivity : AppCompatActivity() {
                                     putString("user_role", userObj.optString("role", ""))
                                 }
                                 apply()
+                            }
+                            val db = AppDatabase.getDatabase(this@LoginActivity)
+                            val userDao = db.userDao()
+
+                            CoroutineScope(Dispatchers.IO).launch {
+                                userDao.clearUsers() // Remove old session if any
+                                userDao.insertUser(
+                                    UserEntity(
+                                        userId = userObj?.optString("id", "") ?: "",
+                                        name = "${
+                                            userObj?.optString(
+                                                "firstName",
+                                                ""
+                                            )
+                                        } ${userObj?.optString("lastName", "")}",
+                                        email = userObj?.optString("email", "") ?: "",
+                                        role = userObj?.optString("role", "") ?: "",
+                                        token = token
+                                    )
+                                )
                             }
                             
                             Toast.makeText(this@LoginActivity, "Login successful!", Toast.LENGTH_SHORT).show()
@@ -242,6 +270,7 @@ class LoginActivity : AppCompatActivity() {
                     Toast.makeText(this@LoginActivity, "Cannot connect to server. Please check your internet connection.", Toast.LENGTH_LONG).show()
                 }
             } catch (e: Exception) {
+                Log.e("LOGIN_ERROR", "Login failed", e)
                 withContext(Dispatchers.Main) {
                     showLoading(false)
                     Toast.makeText(this@LoginActivity, "Login failed: ${e.message}", Toast.LENGTH_LONG).show()

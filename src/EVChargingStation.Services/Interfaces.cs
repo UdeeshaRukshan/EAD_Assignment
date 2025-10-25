@@ -19,6 +19,8 @@ public interface IUserService
     Task<bool> DeleteUserAsync(string id);
     Task<bool> AuthenticateUserAsync(string email, string password);
     Task<string> GenerateJwtTokenAsync(User user);
+    Task<User?> GetUserByNICAsync(string nic);
+
 }
 
 public interface IChargingStationService

@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { apiService } from '../services/apiService';
 import { useAuth } from '../contexts/AuthContext';
 import { FiUser, FiMail, FiPhone, FiEdit, FiTrash2, FiToggleLeft, FiToggleRight, FiCreditCard, FiLogOut, FiHome, FiSettings, FiLock, FiBell, FiHelpCircle } from 'react-icons/fi';
+import { useNavigate } from "react-router-dom";
+
 
 const EVUserProfile: React.FC = () => {
   const { logout } = useAuth();
@@ -11,6 +13,8 @@ const EVUserProfile: React.FC = () => {
   const [formData, setFormData] = useState<any>({});
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const navigate = useNavigate();
+
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -54,6 +58,37 @@ const EVUserProfile: React.FC = () => {
     }
   };
 
+  const handleActivateToggle = async () => {
+  if (profile.isActive) {
+    // Deactivate flow
+    if (window.confirm("Are you sure you want to deactivate your account? You will be logged out.")) {
+      try {
+        await apiService.deactivateUser(profile.nic);
+        setProfile({ ...profile, isActive: false });
+        setMessage("Account deactivated ✅");
+        setTimeout(() => setMessage(""), 3000);
+
+        // Log out after successful deactivation
+        logout();
+      } catch {
+        setError("Deactivation failed ❌");
+        setTimeout(() => setError(""), 3000);
+      }
+    }
+  } else {
+    // Activate flow
+    try {
+      await apiService.activateUser(profile.nic);
+      setProfile({ ...profile, isActive: true });
+      setMessage("Account activated ✅");
+      setTimeout(() => setMessage(""), 3000);
+    } catch {
+      setError("Activation failed ❌");
+      setTimeout(() => setError(""), 3000);
+    }
+  }
+};
+
   const handleDeactivate = async () => {
     try {
       await apiService.deactivateUser(profile.nic);
@@ -80,8 +115,11 @@ const EVUserProfile: React.FC = () => {
   };
 
   const handleLogout = () => {
+  if (window.confirm("Are you sure you want to log out?")) {
     logout();
-  };
+    navigate("/login");
+  }
+};
 
   if (!profile) return (
     <div className="flex items-center justify-center h-screen bg-gray-50">
@@ -285,22 +323,28 @@ const EVUserProfile: React.FC = () => {
                     <p className="text-gray-600 font-semibold">Account Status</p>
                     <p className="text-sm text-gray-500">Current account state</p>
                   </div>
-                  <span className={`px-4 py-2 rounded-full font-bold ${profile.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    {profile.isActive ? 'Active' : 'Inactive'}
+                  <span
+                      className={`px-4 py-2 rounded-full font-bold ${
+                        profile.isActive
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700"
+                      }`}
+                    >
+                      {profile.isActive ? "Active" : "Inactive"}
                   </span>
                 </div>
 
                 <div className="flex gap-3">
                   {profile.isActive ? (
                     <button
-                      onClick={handleDeactivate}
+                      onClick={handleActivateToggle}
                       className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg transition flex-1 justify-center"
                     >
                       <FiToggleLeft /> Deactivate Account
                     </button>
                   ) : (
                     <button
-                      onClick={handleActivate}
+                      onClick={handleActivateToggle}
                       className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition flex-1 justify-center"
                     >
                       <FiToggleRight /> Activate Account

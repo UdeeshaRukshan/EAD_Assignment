@@ -72,6 +72,38 @@ public class AuthController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+    [HttpPatch("{nic}/activate")]
+    public async Task<IActionResult> ActivateUser(string nic)
+    {
+        var user = await _userService.GetUserByNICAsync(nic);
+        if (user == null) return NotFound();
+
+        user.IsActive = true;
+        await _userService.UpdateUserAsync(user);
+        return Ok(new { message = "User activated successfully" });
+    }
+
+    // PATCH: api/users/{nic}/deactivate
+    [HttpPatch("{nic}/deactivate")]
+    public async Task<IActionResult> DeactivateUser(string nic)
+    {
+        var user = await _userService.GetUserByNICAsync(nic);
+        if (user == null) return NotFound();
+
+        user.IsActive = false;
+        await _userService.UpdateUserAsync(user);
+        return Ok(new { message = "User deactivated successfully" });
+    }
+
+    [HttpDelete("{nic}")]
+    public async Task<IActionResult> DeleteUser(string nic)
+    {
+        var user = await _userService.GetUserByNICAsync(nic);
+        if (user == null) return NotFound();
+
+        await _userService.DeleteUserAsync(user.Id);
+        return Ok(new { message = "User deleted successfully" });
+    }
 
     // POST: api/auth/login
     // Handles user login requests

@@ -76,20 +76,20 @@ class ApiService {
   }
 
   async updateProfile(nic: string, data: Partial<{ firstName: string; lastName: string; email: string; phoneNumber: string; password: string }>): Promise<any> {
-    const response: AxiosResponse<any> = await this.api.put(`/users/${nic}`, data);
+    const response: AxiosResponse<any> = await this.api.put(`/auth/${nic}`, data);
     return response.data;
   }
 
   async activateUser(nic: string): Promise<void> {
-    await this.api.patch(`/users/${nic}/activate`);
+    await this.api.patch(`/auth/${nic}/activate`);
   }
 
   async deactivateUser(nic: string): Promise<void> {
-    await this.api.patch(`/users/${nic}/deactivate`);
+    await this.api.patch(`/auth/${nic}/deactivate`);
   }
 
   async deleteUser(nic: string): Promise<void> {
-    await this.api.delete(`/users/${nic}`);
+    await this.api.delete(`/auth/${nic}`);
   }
 
   // Charging Stations endpoints

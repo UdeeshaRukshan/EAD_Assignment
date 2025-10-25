@@ -67,7 +67,7 @@ public class UserService : IUserService
     public async Task<User> UpdateUserAsync(User user)
     {
         user.UpdatedAt = DateTime.UtcNow;
-       await _users.ReplaceOneAsync(u => u.NIC == user.NIC, user);
+        await _users.ReplaceOneAsync(u => u.NIC == user.NIC, user);
         return user;
     }
 
@@ -82,7 +82,7 @@ public class UserService : IUserService
     {
         var user = await GetUserByEmailAsync(email);
         if (user == null || !user.IsActive) return false;
-        
+
         return VerifyPassword(password, user.PasswordHash);
     }
 
@@ -118,4 +118,6 @@ public class UserService : IUserService
         var hashedInputPassword = HashPassword(password);
         return hashedInputPassword == hashPassword;
     }
+
 }
+

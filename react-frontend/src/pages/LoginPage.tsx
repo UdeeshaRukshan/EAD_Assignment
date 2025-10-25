@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import RegisterPage from './RegistrationPage';
+
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -9,11 +10,8 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login, user } = useAuth();
+  const navigate = useNavigate();
 
-  // Redirect if already logged in
-  if (user) {
-    return <Navigate to="/profile" replace />;
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,8 +22,18 @@ const LoginPage: React.FC = () => {
     
     if (!success) {
       setError('Invalid email or password');
+      setIsLoading(false);
+      return;
     }
     
+    const loggedUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+    console.log("logged User: ",loggedUser);
+    if (loggedUser?.role === "EVOwner") {
+      navigate("/profile");
+    } else {
+      navigate("/");
+    }
     setIsLoading(false);
   };
 
