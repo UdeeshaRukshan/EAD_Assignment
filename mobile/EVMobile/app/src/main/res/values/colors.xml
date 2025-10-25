@@ -60,4 +60,10 @@
     
     <!-- Status Badge Background -->
     <color name="status_background">#E8F5E8</color>
+    
+    <!-- QR Scanner Colors -->
+    <color name="zxing_custom_possible_result_points">#C0FF9800</color>
+    <color name="zxing_custom_result_view">#B000C853</color>
+    <color name="zxing_custom_viewfinder_laser">#FF00C853</color>
+    <color name="zxing_custom_viewfinder_mask">#60000000</color>
 </resources>

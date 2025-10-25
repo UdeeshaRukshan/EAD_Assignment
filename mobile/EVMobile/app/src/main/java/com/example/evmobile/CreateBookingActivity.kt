@@ -21,6 +21,16 @@ import java.util.*
 
 class CreateBookingActivity : AppCompatActivity() {
     
+    companion object {
+        const val EXTRA_BOOKING_ID = "extra_booking_id"
+        const val EXTRA_BOOKING_STATION_ID = "extra_booking_station_id"
+        const val EXTRA_BOOKING_CONNECTOR_ID = "extra_booking_connector_id"
+        const val EXTRA_BOOKING_START_TIME = "extra_booking_start_time"
+        const val EXTRA_BOOKING_END_TIME = "extra_booking_end_time"
+        const val EXTRA_BOOKING_NOTES = "extra_booking_notes"
+        const val EXTRA_BOOKING_STATION_NAME = "extra_booking_station_name"
+    }
+    
     // UI Components
     private lateinit var toolbar: MaterialToolbar
     private lateinit var actvStation: MaterialAutoCompleteTextView
@@ -45,6 +55,10 @@ class CreateBookingActivity : AppCompatActivity() {
     private var startDateTime: Calendar? = null
     private var endDateTime: Calendar? = null
     
+    // Modification mode
+    private var isModificationMode = false
+    private var bookingId: String? = null
+    
     // Date/Time formatters
     private val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
     private val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
@@ -54,11 +68,19 @@ class CreateBookingActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_create_booking)
         
+        // Check if this is modification mode
+        checkModificationMode()
+        
         initViews()
         setupToolbar()
         loadStations()
         setupClickListeners()
         setupFormValidation()
+    }
+    
+    private fun checkModificationMode() {
+        bookingId = intent.getStringExtra(EXTRA_BOOKING_ID)
+        isModificationMode = !bookingId.isNullOrBlank()
     }
     
     private fun initViews() {
@@ -84,7 +106,7 @@ class CreateBookingActivity : AppCompatActivity() {
         supportActionBar?.apply {
             setDisplayHomeAsUpEnabled(true)
             setDisplayShowHomeEnabled(true)
-            title = "Create Booking"
+            title = if (isModificationMode) "Modify Booking" else "Create Booking"
         }
         
         toolbar.setNavigationOnClickListener {
@@ -93,12 +115,162 @@ class CreateBookingActivity : AppCompatActivity() {
     }
     
     private fun loadStations() {
-        availableStations.clear()
-        availableStations.addAll(CreateBookingDummyData.generateStationsForBooking())
+        val repository = com.example.evmobile.data.repository.BookingRepository(this@CreateBookingActivity)
         
-        val stationNames = availableStations.map { "${it.name} (${it.distanceKm} km)" }
-        val stationAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, stationNames)
-        actvStation.setAdapter(stationAdapter)
+        // Check authentication first
+        if (!repository.isUserAuthenticated()) {
+            showAuthenticationError()
+            return
+        }
+        
+        showLoading(true)
+        
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val result = repository.getStationsForBooking()
+                
+                withContext(Dispatchers.Main) {
+                    showLoading(false)
+                    
+                    if (result.isSuccess) {
+                        val stations = result.getOrNull() ?: emptyList()
+                        availableStations.clear()
+                        availableStations.addAll(stations)
+                        
+                        val stationNames = availableStations.map { "${it.name} (${it.distanceKm?.let { "%.1f km".format(it) } ?: "-- km"})" }
+                        val stationAdapter = ArrayAdapter(this@CreateBookingActivity, android.R.layout.simple_dropdown_item_1line, stationNames)
+                        actvStation.setAdapter(stationAdapter)
+                        
+                        if (availableStations.isEmpty()) {
+                            showToast("No available stations found")
+                        } else if (isModificationMode) {
+                            // If in modification mode, populate form with existing data
+                            populateFormForModification()
+                        }
+                    } else {
+                        val errorMessage = result.exceptionOrNull()?.message ?: "Unknown error"
+                        showToast("Failed to load stations: $errorMessage")
+                        
+                        // If authentication error, show login prompt
+                        if (errorMessage.contains("authentication", true) || errorMessage.contains("token", true)) {
+                            showAuthenticationError()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    showLoading(false)
+                    showToast("Error loading stations: ${e.message}")
+                }
+            }
+        }
+    }
+    
+    private fun populateFormForModification() {
+        if (!isModificationMode || bookingId.isNullOrBlank()) return
+        
+        showLoading(true)
+        
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                // Get auth token to fetch complete booking details
+                val authToken = getSharedPreferences("EVChargingApp", MODE_PRIVATE)
+                    .getString("auth_token", null)
+                
+                if (authToken.isNullOrBlank()) {
+                    withContext(Dispatchers.Main) {
+                        showLoading(false)
+                        showToast("Authentication error")
+                        finish()
+                    }
+                    return@launch
+                }
+                
+                // Fetch complete booking details from API
+                val apiService = com.example.evmobile.data.api.BookingApiService()
+                val apiResult = apiService.getBookingById(bookingId!!, authToken)
+                
+                withContext(Dispatchers.Main) {
+                    showLoading(false)
+                    
+                    if (apiResult.isSuccess) {
+                        val apiBooking = apiResult.getOrNull()!!
+                        populateFormWithApiBookingData(apiBooking)
+                    } else {
+                        val error = apiResult.exceptionOrNull()?.message ?: "Failed to load booking details"
+                        showToast("Error loading booking: $error")
+                        finish()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    showLoading(false)
+                    showToast("Error loading booking: ${e.message}")
+                    finish()
+                }
+            }
+        }
+    }
+    
+    private fun populateFormWithApiBookingData(apiBooking: com.example.evmobile.models.ApiBooking) {
+        // Set station
+        selectedStation = availableStations.find { it.id == apiBooking.stationId }
+        selectedStation?.let { station ->
+            val stationIndex = availableStations.indexOf(station)
+            val stationNames = availableStations.map { "${it.name} (${it.distanceKm?.let { "%.1f km".format(it) } ?: "-- km"})" }
+            actvStation.setText(stationNames[stationIndex], false)
+            updateStationDetails()
+            
+            // Load connectors first
+            loadConnectors()
+            
+            // Set the selected connector using the connector ID from API
+            selectedConnector = station.connectors.find { it.id == apiBooking.connectorId }
+            selectedConnector?.let { connector ->
+                val availableConnectors = station.connectors.filter { it.isAvailable }
+                val connectorNames = availableConnectors.map { "${it.type} - ${it.power} (\$${it.pricePerKwh}/kWh)" }
+                val connectorIndex = availableConnectors.indexOf(connector)
+                if (connectorIndex >= 0) {
+                    actvConnector.setText(connectorNames[connectorIndex], false)
+                } else {
+                    // If the originally selected connector is not available, show a message
+                    showToast("Original connector (${connector.type} - ${connector.power}) is no longer available. Please select a new one.")
+                }
+            }
+        }
+        
+        // Parse and set date and time from API format (ISO string)
+        try {
+            val startTime = isoFormat.parse(apiBooking.startTime)?.time ?: 0L
+            val endTime = isoFormat.parse(apiBooking.endTime)?.time ?: 0L
+            
+            if (startTime > 0) {
+                startDateTime = Calendar.getInstance().apply { timeInMillis = startTime }
+                etStartDate.setText(dateFormat.format(startDateTime!!.time))
+                etStartTime.setText(timeFormat.format(startDateTime!!.time))
+            }
+            
+            if (endTime > 0) {
+                endDateTime = Calendar.getInstance().apply { timeInMillis = endTime }
+                etEndDate.setText(dateFormat.format(endDateTime!!.time))
+                etEndTime.setText(timeFormat.format(endDateTime!!.time))
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("CreateBookingActivity", "Error parsing booking times", e)
+            showToast("Error parsing booking times")
+        }
+        
+        // Set notes from API data
+        apiBooking.notes?.let { notes ->
+            if (notes.isNotBlank()) {
+                etNotes.setText(notes)
+            }
+        }
+        
+        // Update button text
+        btnCreateBooking.text = "Update Booking"
+        
+        // Cost estimation removed per user request
     }
     
     private fun setupClickListeners() {
@@ -113,7 +285,7 @@ class CreateBookingActivity : AppCompatActivity() {
         actvConnector.setOnItemClickListener { _, _, position, _ ->
             selectedStation?.let { station ->
                 selectedConnector = station.connectors[position]
-                updateCostEstimation()
+                // Cost estimation removed per user request
             }
         }
         
@@ -124,7 +296,13 @@ class CreateBookingActivity : AppCompatActivity() {
         etEndTime.setOnClickListener { showTimePicker(false) }
         
         // Create booking button
-        btnCreateBooking.setOnClickListener { createBooking() }
+        btnCreateBooking.setOnClickListener { 
+            if (isModificationMode) {
+                updateBooking()
+            } else {
+                createBooking()
+            }
+        }
     }
     
     private fun updateStationDetails() {
@@ -139,7 +317,7 @@ class CreateBookingActivity : AppCompatActivity() {
             val availableConnectors = station.connectors.filter { it.isAvailable }
             
             if (availableConnectors.isNotEmpty()) {
-                val connectorNames = availableConnectors.map { "${it.type} - ${it.power} (₹${it.pricePerKwh}/kWh)" }
+                val connectorNames = availableConnectors.map { "${it.type} - ${it.power} (\$${it.pricePerKwh}/kWh)" }
                 val connectorAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, connectorNames)
                 actvConnector.setAdapter(connectorAdapter)
                 
@@ -158,6 +336,10 @@ class CreateBookingActivity : AppCompatActivity() {
         
         // Set minimum date to today
         val minDate = Calendar.getInstance()
+        
+        // Set maximum date to 7 days from today
+        val maxDate = Calendar.getInstance()
+        maxDate.add(Calendar.DAY_OF_MONTH, 7)
         
         // Set default date based on selection
         if (isStartDate && startDateTime != null) {
@@ -189,7 +371,7 @@ class CreateBookingActivity : AppCompatActivity() {
                     etEndDate.setText(dateFormat.format(endDateTime!!.time))
                 }
                 
-                updateCostEstimation()
+                // Cost estimation removed per user request
                 validateForm()
             },
             calendar.get(Calendar.YEAR),
@@ -198,6 +380,7 @@ class CreateBookingActivity : AppCompatActivity() {
         )
         
         datePickerDialog.datePicker.minDate = minDate.timeInMillis
+        datePickerDialog.datePicker.maxDate = maxDate.timeInMillis
         datePickerDialog.show()
     }
     
@@ -230,7 +413,7 @@ class CreateBookingActivity : AppCompatActivity() {
                     etEndTime.setText(timeFormat.format(endDateTime!!.time))
                 }
                 
-                updateCostEstimation()
+                // Cost estimation removed per user request
                 validateForm()
             },
             calendar.get(Calendar.HOUR_OF_DAY),
@@ -242,32 +425,7 @@ class CreateBookingActivity : AppCompatActivity() {
     }
     
     private fun updateCostEstimation() {
-        if (selectedConnector != null && startDateTime != null && endDateTime != null) {
-            val durationHours = (endDateTime!!.timeInMillis - startDateTime!!.timeInMillis) / (1000 * 60 * 60)
-            
-            if (durationHours > 0) {
-                // Estimate energy consumption based on connector power and duration
-                val connectorPowerKw = when {
-                    selectedConnector!!.power.contains("7") -> 7.0
-                    selectedConnector!!.power.contains("22") -> 22.0
-                    selectedConnector!!.power.contains("50") -> 50.0
-                    selectedConnector!!.power.contains("150") -> 150.0
-                    else -> 7.0
-                }
-                
-                val estimatedEnergyKwh = minOf(connectorPowerKw * durationHours, 100.0) // Cap at 100 kWh
-                val estimatedCost = estimatedEnergyKwh * selectedConnector!!.pricePerKwh
-                
-                tvEstimatedCost.text = "₹${String.format("%.2f", estimatedCost)}"
-                tvEstimatedDuration.text = "${durationHours}h ${String.format("%.1f", estimatedEnergyKwh)} kWh"
-                
-                cardCostEstimation.visibility = View.VISIBLE
-            } else {
-                cardCostEstimation.visibility = View.GONE
-            }
-        } else {
-            cardCostEstimation.visibility = View.GONE
-        }
+        // Cost estimation removed per user request
     }
     
     private fun setupFormValidation() {
@@ -276,18 +434,39 @@ class CreateBookingActivity : AppCompatActivity() {
     }
     
     private fun validateForm(): Boolean {
-        val isValid = selectedStation != null &&
-                     selectedConnector != null &&
-                     startDateTime != null &&
-                     endDateTime != null &&
-                     etStartDate.text?.isNotEmpty() == true &&
-                     etStartTime.text?.isNotEmpty() == true &&
-                     etEndDate.text?.isNotEmpty() == true &&
-                     etEndTime.text?.isNotEmpty() == true &&
-                     (endDateTime?.timeInMillis ?: 0) > (startDateTime?.timeInMillis ?: 0)
+        val station = selectedStation
+        val connector = selectedConnector
+        val start = startDateTime
+        val end = endDateTime
         
-        btnCreateBooking.isEnabled = isValid
-        return isValid
+        // Basic field validation
+        if (station == null || connector == null || start == null || end == null ||
+            etStartDate.text?.isNotEmpty() != true || etStartTime.text?.isNotEmpty() != true ||
+            etEndDate.text?.isNotEmpty() != true || etEndTime.text?.isNotEmpty() != true) {
+            btnCreateBooking.isEnabled = false
+            return false
+        }
+        
+        // Apply appropriate validation based on mode
+        val validationResult = if (isModificationMode) {
+            // For modification: validate the new booking time still follows the 7-day rule and basic constraints
+            com.example.evmobile.utils.BookingValidationUtils.validateBookingCreation(
+                start.time, end.time
+            )
+        } else {
+            // For creation: standard booking creation validation
+            com.example.evmobile.utils.BookingValidationUtils.validateBookingCreation(
+                start.time, end.time
+            )
+        }
+        
+        if (!validationResult.isValid) {
+            btnCreateBooking.isEnabled = false
+            return false
+        }
+        
+        btnCreateBooking.isEnabled = true
+        return true
     }
     
     private fun createBooking() {
@@ -298,38 +477,91 @@ class CreateBookingActivity : AppCompatActivity() {
         
         showLoading(true)
         
-        // Simulate API call
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Get user session
-                val prefs = getSharedPreferences("EVChargingApp", MODE_PRIVATE)
-                val userId = prefs.getString("user_id", "dummy_user_123") ?: "dummy_user_123"
+                val repository = com.example.evmobile.data.repository.BookingRepository(this@CreateBookingActivity)
                 
-                // Prepare request
-                val request = CreateBookingRequest(
-                    userId = userId,
+                val result = repository.createBooking(
                     stationId = selectedStation!!.id,
                     connectorId = selectedConnector!!.id,
-                    startTime = isoFormat.format(startDateTime!!.time),
-                    endTime = isoFormat.format(endDateTime!!.time),
+                    startTime = startDateTime!!.time,
+                    endTime = endDateTime!!.time,
                     notes = etNotes.text?.toString()?.takeIf { it.isNotBlank() }
                 )
                 
-                // Simulate network delay
-                delay(2000)
-                
-                // Simulate API call
-                val response = CreateBookingDummyData.simulateCreateBooking(request)
-                
                 withContext(Dispatchers.Main) {
                     showLoading(false)
-                    showBookingSuccess(response)
+                    
+                    if (result.isSuccess) {
+                        val response = result.getOrNull()!!
+                        showBookingSuccess(response)
+                    } else {
+                        val error = result.exceptionOrNull()?.message ?: "Unknown error"
+                        
+                        // Check if error is related to booking overlap
+                        if (error.contains("already booked", ignoreCase = true) || 
+                            error.contains("overlap", ignoreCase = true) ||
+                            error.contains("time slot", ignoreCase = true)) {
+                            showOverlapErrorDialog()
+                        } else {
+                            showToast("Failed to create booking: $error")
+                        }
+                    }
                 }
                 
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     showLoading(false)
-                    showToast("Failed to create booking. Please try again.")
+                    showToast("Failed to create booking: ${e.message}")
+                }
+            }
+        }
+    }
+    
+    private fun updateBooking() {
+        if (!validateForm()) {
+            showToast("Please fill all required fields")
+            return
+        }
+        
+        showLoading(true)
+        
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val repository = com.example.evmobile.data.repository.BookingRepository(this@CreateBookingActivity)
+                
+                val result = repository.updateBooking(
+                    bookingId = bookingId!!,
+                    stationId = selectedStation!!.id,
+                    connectorId = selectedConnector!!.id,
+                    startTime = startDateTime!!.time,
+                    endTime = endDateTime!!.time,
+                    notes = etNotes.text?.toString()?.takeIf { it.isNotBlank() }
+                )
+                
+                withContext(Dispatchers.Main) {
+                    showLoading(false)
+                    
+                    if (result.isSuccess) {
+                        showUpdateSuccess()
+                    } else {
+                        val error = result.exceptionOrNull()?.message ?: "Unknown error"
+                        
+                        // Check if error is related to booking overlap
+                        if (error.contains("already booked", ignoreCase = true) || 
+                            error.contains("overlap", ignoreCase = true) ||
+                            error.contains("time slot", ignoreCase = true)) {
+                            showOverlapErrorDialog()
+                        } else {
+                            showToast("Failed to update booking: $error")
+                        }
+                    }
+                }
+                
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    showLoading(false)
+                    showToast("Failed to update booking: ${e.message}")
                 }
             }
         }
@@ -359,12 +591,94 @@ class CreateBookingActivity : AppCompatActivity() {
             .show()
     }
     
+    private fun showUpdateSuccess() {
+        val message = """
+            Booking updated successfully!
+            
+            Station: ${selectedStation!!.name}
+            Date: ${dateFormat.format(startDateTime!!.time)}
+            Time: ${timeFormat.format(startDateTime!!.time)} - ${timeFormat.format(endDateTime!!.time)}
+            
+            Your booking has been modified.
+        """.trimIndent()
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Booking Updated")
+            .setMessage(message)
+            .setPositiveButton("OK") { _, _ ->
+                setResult(RESULT_OK)
+                finish()
+            }
+            .setCancelable(false)
+            .show()
+    }
+    
+    private fun showOverlapErrorDialog() {
+        val message = """
+            ⚠️ Time Slot Already Booked
+            
+            The selected time slot is already reserved by another user for this connector.
+            
+            Please select a different:
+            • Date and time
+            • Connector type
+            • Charging station
+            
+            Tip: Check the station's availability before booking!
+        """.trimIndent()
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Booking Conflict")
+            .setMessage(message)
+            .setPositiveButton("Choose Different Time") { dialog, _ ->
+                dialog.dismiss()
+                // Keep form filled, just let user change times
+            }
+            .setNegativeButton("Change Station") { dialog, _ ->
+                dialog.dismiss()
+                // Clear station selection to let user select a different one
+                actvStation.text.clear()
+                actvConnector.text.clear()
+                selectedStation = null
+                selectedConnector = null
+                cardConnector.visibility = View.GONE
+                tvStationDetails.visibility = View.GONE
+            }
+            .setCancelable(true)
+            .show()
+        
+        // Also show a toast for quick feedback
+        Toast.makeText(
+            this, 
+            "⚠️ This time slot is already booked. Please choose a different time.", 
+            Toast.LENGTH_LONG
+        ).show()
+    }
+    
     private fun showLoading(show: Boolean) {
         loadingOverlay.visibility = if (show) View.VISIBLE else View.GONE
     }
     
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+    
+    private fun showAuthenticationError() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Authentication Required")
+            .setMessage("Please log in to create bookings.")
+            .setPositiveButton("Login") { _, _ ->
+                // Navigate to login screen
+                val intent = android.content.Intent(this, com.example.evmobile.LoginActivity::class.java)
+                intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+                finish()
+            }
+            .setNegativeButton("Cancel") { _, _ ->
+                finish()
+            }
+            .setCancelable(false)
+            .show()
     }
     
     override fun onBackPressed() {

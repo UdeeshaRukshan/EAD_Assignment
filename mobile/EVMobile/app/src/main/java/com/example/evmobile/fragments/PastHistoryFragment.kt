@@ -15,7 +15,10 @@ import com.example.evmobile.R
 import com.example.evmobile.adapters.ChargingHistoryAdapter
 import com.example.evmobile.models.ChargingHistory
 import com.example.evmobile.models.ChargingStatus
-import com.example.evmobile.models.DummyDataGenerator
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class PastHistoryFragment : Fragment() {
     
@@ -69,12 +72,52 @@ class PastHistoryFragment : Fragment() {
     }
     
     private fun loadChargingHistory() {
-        // Load dummy data
-        historyList.clear()
-        historyList.addAll(DummyDataGenerator.generateChargingHistory())
+        // Show loading state
+        recyclerView.visibility = View.GONE
+        emptyStateLayout.visibility = View.GONE
+        cardStatistics.visibility = View.GONE
         
-        updateUI()
-        updateStatistics()
+        val repository = com.example.evmobile.data.repository.BookingRepository(requireContext())
+        
+        // Check if user is authenticated first
+        if (!repository.isUserAuthenticated()) {
+            showAuthenticationError()
+            return
+        }
+        
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val result = repository.getUserBookings()
+                
+                withContext(Dispatchers.Main) {
+                    if (result.isSuccess) {
+                        val (_, chargingHistory) = result.getOrNull() ?: Pair(emptyList(), emptyList())
+                        historyList.clear()
+                        historyList.addAll(chargingHistory)
+                        
+                        updateUI()
+                        updateStatistics()
+                    } else {
+                        val errorMessage = result.exceptionOrNull()?.message ?: "Unknown error"
+                        showToast("Failed to load charging history: $errorMessage")
+                        
+                        // If authentication error, show login prompt
+                        if (errorMessage.contains("authentication", true) || errorMessage.contains("token", true)) {
+                            showAuthenticationError()
+                        } else {
+                            updateUI()
+                            updateStatistics()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    showToast("Error loading charging history: ${e.message}")
+                    updateUI()
+                    updateStatistics()
+                }
+            }
+        }
     }
     
     private fun updateUI() {
@@ -130,5 +173,24 @@ class PastHistoryFragment : Fragment() {
     
     private fun showToast(message: String) {
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+    }
+    
+    private fun showAuthenticationError() {
+        recyclerView.visibility = View.GONE
+        emptyStateLayout.visibility = View.VISIBLE
+        cardStatistics.visibility = View.GONE
+        
+        // Show authentication error dialog
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Authentication Required")
+            .setMessage("Please log in to view your charging history.")
+            .setPositiveButton("Login") { _, _ ->
+                // Navigate to login screen
+                val intent = android.content.Intent(requireContext(), com.example.evmobile.LoginActivity::class.java)
+                intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 }

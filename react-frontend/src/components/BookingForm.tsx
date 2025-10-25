@@ -27,6 +27,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
   // Get the current date and time for validation
   const now = new Date();
   const maxDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+  const defaultStartTime = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour from now
 
   // Format datetime-local input values
   const formatDateTimeLocal = (date: Date): string => {
@@ -38,8 +39,19 @@ const BookingForm: React.FC<BookingFormProps> = ({
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
-  const minDateTime = formatDateTimeLocal(new Date(now.getTime() + 60 * 60 * 1000)); // 1 hour from now
+  const minDateTime = formatDateTimeLocal(defaultStartTime); // Use 1 hour ahead as minimum
   const maxDateTime = formatDateTimeLocal(maxDate);
+  const defaultStartDateTime = formatDateTimeLocal(defaultStartTime); // Default value for start time
+
+  // Set default start time on component mount
+  useEffect(() => {
+    if (!startTime) {
+      setStartTime(defaultStartDateTime);
+      // Also set default end time to 30 minutes after start time
+      const defaultEndTime = new Date(defaultStartTime.getTime() + 30 * 60 * 1000);
+      setEndTime(formatDateTimeLocal(defaultEndTime));
+    }
+  }, []); // Empty dependency array to run only once on mount
 
   useEffect(() => {
     if (selectedStationId) {
@@ -54,6 +66,69 @@ const BookingForm: React.FC<BookingFormProps> = ({
       }
     }
   }, [selectedStationId, stations]);
+
+  // Handle start time change with auto-adjustment
+  const handleStartTimeChange = (value: string) => {
+    if (!value) {
+      setStartTime('');
+      return;
+    }
+
+    const selectedStart = new Date(value);
+    const nowPlusHour = new Date(now.getTime() + 60 * 60 * 1000);
+
+    // If selected time is less than 1 hour from now, adjust it
+    if (selectedStart < nowPlusHour) {
+      const adjustedTime = formatDateTimeLocal(nowPlusHour);
+      setStartTime(adjustedTime);
+      // Auto-set end time to 30 minutes after adjusted start time
+      const defaultEnd = new Date(nowPlusHour.getTime() + 30 * 60 * 1000);
+      setEndTime(formatDateTimeLocal(defaultEnd));
+    } else {
+      setStartTime(value);
+      // Auto-set end time to 30 minutes after selected start time if end time is empty
+      if (!endTime) {
+        const defaultEnd = new Date(selectedStart.getTime() + 30 * 60 * 1000);
+        setEndTime(formatDateTimeLocal(defaultEnd));
+      }
+    }
+
+    // Auto-adjust end time if it becomes invalid
+    if (endTime) {
+      const currentEnd = new Date(endTime);
+      const newStart = selectedStart < nowPlusHour ? nowPlusHour : selectedStart;
+      
+      if (currentEnd <= newStart) {
+        // Set end time to 30 minutes after the new start time
+        const newEnd = new Date(newStart.getTime() + 30 * 60 * 1000);
+        setEndTime(formatDateTimeLocal(newEnd));
+      }
+    }
+  };
+
+  // Handle end time change with auto-adjustment
+  const handleEndTimeChange = (value: string) => {
+    if (!value) {
+      setEndTime('');
+      return;
+    }
+
+    const selectedEnd = new Date(value);
+    
+    if (startTime) {
+      const currentStart = new Date(startTime);
+      
+      // If end time is not after start time, adjust it to 30 minutes after start
+      if (selectedEnd <= currentStart) {
+        const adjustedEnd = new Date(currentStart.getTime() + 30 * 60 * 1000);
+        setEndTime(formatDateTimeLocal(adjustedEnd));
+      } else {
+        setEndTime(value);
+      }
+    } else {
+      setEndTime(value);
+    }
+  };
 
   const validateForm = (): string | null => {
     if (!selectedStationId) return 'Please select a charging station';
@@ -208,7 +283,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
             <input
               type="datetime-local"
               value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
+              onChange={(e) => handleStartTimeChange(e.target.value)}
               min={minDateTime}
               max={maxDateTime}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -226,8 +301,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
             <input
               type="datetime-local"
               value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              min={startTime || minDateTime}
+              onChange={(e) => handleEndTimeChange(e.target.value)}
+              min={startTime ? new Date(new Date(startTime).getTime() + 30 * 60 * 1000).toISOString().slice(0, 16) : minDateTime}
               max={maxDateTime}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               required

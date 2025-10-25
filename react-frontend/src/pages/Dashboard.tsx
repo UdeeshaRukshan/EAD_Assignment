@@ -1,24 +1,46 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChargingStation } from '../types';
+import { ChargingStation, Booking } from '../types';
 import { apiService } from '../services/apiService';
 import { useAuth } from '../contexts/AuthContext';
 
 const Dashboard: React.FC = () => {
   const [stations, setStations] = useState<ChargingStation[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { user } = useAuth();
 
   useEffect(() => {
     loadDashboardData();
-  }, []);
+  }, [user]);
 
   const loadDashboardData = async () => {
     try {
       setLoading(true);
       const stationsData = await apiService.getChargingStations();
       setStations(stationsData);
+
+      // Load bookings based on user role
+      if (user) {
+        let userBookings: Booking[] = [];
+        
+        switch (user.role) {
+          case 'Admin':
+          case 'Operator':
+          case 'BackofficeUser':
+            // Admins, operators, and backoffice users can see all bookings
+            userBookings = await apiService.getAllBookings();
+            break;
+          case 'EVOwner':
+          default:
+            // EV Owners can only see their own bookings
+            userBookings = await apiService.getUserBookings(user.id);
+            break;
+        }
+        
+        setBookings(userBookings);
+      }
     } catch (err) {
       setError('Failed to load dashboard data');
       console.error('Dashboard error:', err);
@@ -262,6 +284,114 @@ const Dashboard: React.FC = () => {
                   </Link>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Upcoming Bookings */}
+        {bookings.length > 0 && (
+          <div className="mt-8 bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">Upcoming Bookings</h3>
+                <span className="text-sm text-gray-500">
+                  {user?.role === 'EVOwner' ? 'Your reservations' : 'Recent reservations'}
+                </span>
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                {(() => {
+                  const now = new Date();
+                  const upcomingBookings = bookings
+                    .filter(booking => {
+                      const startTime = new Date(booking.startTime);
+                      return startTime > now && (booking.status === 0 || booking.status === 1); // Pending or Confirmed
+                    })
+                    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+                    .slice(0, 3);
+
+                  if (upcomingBookings.length === 0) {
+                    return (
+                      <div className="text-center py-8">
+                        <div className="text-gray-400 mb-2">
+                          <svg className="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                          </svg>
+                        </div>
+                        <p className="text-gray-500 text-sm">
+                          {user?.role === 'EVOwner' ? 'No upcoming bookings' : 'No upcoming bookings in the system'}
+                        </p>
+                        {user?.role === 'EVOwner' && (
+                          <Link 
+                            to="/bookings" 
+                            className="inline-flex items-center mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
+                          >
+                            Create your first booking →
+                          </Link>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  return upcomingBookings.map((booking) => {
+                    const station = stations.find(s => s.id === booking.stationId);
+                    const startTime = new Date(booking.startTime);
+                    const endTime = new Date(booking.endTime);
+                    const timeUntilStart = Math.ceil((startTime.getTime() - now.getTime()) / (1000 * 60 * 60)); // hours
+
+                    return (
+                      <div key={booking.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-3 h-3 rounded-full ${
+                            booking.status === 0 ? 'bg-yellow-400' : 'bg-green-400'
+                          }`}></div>
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {station?.name || 'Unknown Station'}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {startTime.toLocaleDateString()} at {startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              Duration: {Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60))} minutes
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-medium text-gray-900">
+                            {booking.status === 0 ? 'Pending' : 'Confirmed'}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {timeUntilStart <= 24 
+                              ? `In ${timeUntilStart}h` 
+                              : `In ${Math.ceil(timeUntilStart / 24)} days`
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+              {(() => {
+                const now = new Date();
+                const upcomingCount = bookings.filter(booking => {
+                  const startTime = new Date(booking.startTime);
+                  return startTime > now && (booking.status === 0 || booking.status === 1);
+                }).length;
+                
+                return upcomingCount > 3 && (
+                  <div className="mt-4 text-center">
+                    <Link
+                      to="/bookings"
+                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    >
+                      View all bookings →
+                    </Link>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         )}

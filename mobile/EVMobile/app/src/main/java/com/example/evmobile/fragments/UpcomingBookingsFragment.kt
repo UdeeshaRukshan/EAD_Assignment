@@ -15,8 +15,11 @@ import com.example.evmobile.QRCodeActivity
 import com.example.evmobile.R
 import com.example.evmobile.adapters.UpcomingBookingsAdapter
 import com.example.evmobile.models.Booking
-import com.example.evmobile.models.DummyDataGenerator
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class UpcomingBookingsFragment : Fragment() {
     
@@ -54,11 +57,28 @@ class UpcomingBookingsFragment : Fragment() {
         adapter = UpcomingBookingsAdapter(
             bookings = bookingsList,
             onModifyClick = { booking ->
-                showToast("Modify booking for ${booking.stationName}")
-                // TODO: Navigate to modify booking screen
+                val validationResult = com.example.evmobile.utils.BookingValidationUtils.validateBookingModification(booking)
+                if (validationResult.isValid) {
+                    // Navigate to modify booking screen - only pass booking ID, the complete details will be fetched from API
+                    val intent = Intent(requireContext(), CreateBookingActivity::class.java).apply {
+                        putExtra(CreateBookingActivity.EXTRA_BOOKING_ID, booking.id)
+                    }
+                    startActivityForResult(intent, MODIFY_BOOKING_REQUEST_CODE)
+                    requireActivity().overridePendingTransition(
+                        com.example.evmobile.R.anim.slide_in_right,
+                        com.example.evmobile.R.anim.slide_out_left
+                    )
+                } else {
+                    showToast(validationResult.message)
+                }
             },
             onCancelClick = { booking ->
-                showCancelConfirmation(booking)
+                val validationResult = com.example.evmobile.utils.BookingValidationUtils.validateBookingCancellation(booking)
+                if (validationResult.isValid) {
+                    showCancelConfirmation(booking)
+                } else {
+                    showToast(validationResult.message)
+                }
             },
             onQRCodeClick = { booking ->
                 openQRCodeActivity(booking)
@@ -85,14 +105,56 @@ class UpcomingBookingsFragment : Fragment() {
     
     companion object {
         private const val CREATE_BOOKING_REQUEST_CODE = 1001
+        private const val MODIFY_BOOKING_REQUEST_CODE = 1002
     }
     
     private fun loadBookings() {
-        // Load dummy data
-        bookingsList.clear()
-        bookingsList.addAll(DummyDataGenerator.generateUpcomingBookings())
+        // Show loading state
+        recyclerView.visibility = View.GONE
+        emptyStateLayout.visibility = View.GONE
         
-        updateUI()
+        // Debug authentication state
+        val authState = com.example.evmobile.utils.AuthDebugUtils.debugAuthState(requireContext())
+        
+        val repository = com.example.evmobile.data.repository.BookingRepository(requireContext())
+        
+        // Check if user is authenticated first
+        if (!repository.isUserAuthenticated()) {
+            android.util.Log.w("UpcomingBookingsFragment", "User not authenticated!")
+            showAuthenticationError()
+            return
+        }
+        
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val result = repository.getUserBookings()
+                
+                withContext(Dispatchers.Main) {
+                    if (result.isSuccess) {
+                        val (upcomingBookings, _) = result.getOrNull() ?: Pair(emptyList(), emptyList())
+                        bookingsList.clear()
+                        bookingsList.addAll(upcomingBookings)
+                        
+                        updateUI()
+                    } else {
+                        val errorMessage = result.exceptionOrNull()?.message ?: "Unknown error"
+                        showToast("Failed to load bookings: $errorMessage")
+                        
+                        // If authentication error, show login prompt
+                        if (errorMessage.contains("authentication", true) || errorMessage.contains("token", true)) {
+                            showAuthenticationError()
+                        } else {
+                            updateUI()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    showToast("Error loading bookings: ${e.message}")
+                    updateUI()
+                }
+            }
+        }
     }
     
     private fun updateUI() {
@@ -119,17 +181,59 @@ class UpcomingBookingsFragment : Fragment() {
     }
     
     private fun cancelBooking(booking: Booking) {
-        // Remove booking from list
-        bookingsList.remove(booking)
-        updateUI()
-        showToast("Booking cancelled successfully")
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val repository = com.example.evmobile.data.repository.BookingRepository(requireContext())
+                val result = repository.cancelBooking(booking.id)
+                
+                withContext(Dispatchers.Main) {
+                    if (result.isSuccess) {
+                        // Remove booking from local list
+                        bookingsList.remove(booking)
+                        updateUI()
+                        showToast("Booking cancelled successfully")
+                    } else {
+                        val error = result.exceptionOrNull()?.message ?: "Unknown error"
+                        showToast("Failed to cancel booking: $error")
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    showToast("Error cancelling booking: ${e.message}")
+                }
+            }
+        }
     }
     
     private fun showToast(message: String) {
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
     
+    private fun showAuthenticationError() {
+        recyclerView.visibility = View.GONE
+        emptyStateLayout.visibility = View.VISIBLE
+        
+        // Show authentication error dialog
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Authentication Required")
+            .setMessage("Please log in to view your bookings.")
+            .setPositiveButton("Login") { _, _ ->
+                // Navigate to login screen
+                val intent = Intent(requireContext(), com.example.evmobile.LoginActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+    
     private fun openQRCodeActivity(booking: Booking) {
+        // Only show QR code for approved bookings
+        if (booking.qrCode.isNullOrBlank()) {
+            showToast("QR code is not available. Booking must be approved first.")
+            return
+        }
+        
         val intent = Intent(requireContext(), QRCodeActivity::class.java).apply {
             putExtra(QRCodeActivity.EXTRA_BOOKING_ID, booking.id)
             putExtra(QRCodeActivity.EXTRA_STATION_NAME, booking.stationName)
@@ -145,10 +249,19 @@ class UpcomingBookingsFragment : Fragment() {
     
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == CREATE_BOOKING_REQUEST_CODE && resultCode == android.app.Activity.RESULT_OK) {
-            // Refresh the bookings list
-            loadBookings()
-            showToast("Booking created successfully!")
+        if (resultCode == android.app.Activity.RESULT_OK) {
+            when (requestCode) {
+                CREATE_BOOKING_REQUEST_CODE -> {
+                    // Refresh the bookings list
+                    loadBookings()
+                    showToast("Booking created successfully!")
+                }
+                MODIFY_BOOKING_REQUEST_CODE -> {
+                    // Refresh the bookings list
+                    loadBookings()
+                    showToast("Booking updated successfully!")
+                }
+            }
         }
     }
 }
