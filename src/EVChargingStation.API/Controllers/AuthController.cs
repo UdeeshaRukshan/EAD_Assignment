@@ -10,6 +10,7 @@ using EVChargingStation.Models;
 using EVChargingStation.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using Microsoft.Extensions.Logging;
 
 namespace EVChargingStation.API.Controllers;
 
@@ -18,10 +19,12 @@ namespace EVChargingStation.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IUserService _userService;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IUserService userService)
+    public AuthController(IUserService userService, ILogger<AuthController> logger)
     {
         _userService = userService;
+        _logger = logger;
     }
 
     // POST: api/auth/register
@@ -29,12 +32,14 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<ActionResult<AuthResponse>> Register(RegisterRequest request)
     {
+        _logger.LogInformation("Register request received for email: {Email}", request.Email);
         try
         {
             // Check if user already exists
             var existingUser = await _userService.GetUserByEmailAsync(request.Email);
             if (existingUser != null)
             {
+                _logger.LogWarning("Registration failed: User with email {Email} already exists", request.Email);
                 return BadRequest(new { message = "User with this email already exists" });
             }
 
@@ -52,7 +57,7 @@ public class AuthController : ControllerBase
 
             await _userService.CreateUserAsync(user);
             var token = await _userService.GenerateJwtTokenAsync(user);
-
+            _logger.LogInformation("User registered successfully: {Email}", user.Email);
             return Ok(new AuthResponse
             {
                 Success = true,
@@ -69,6 +74,7 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error during registration for email: {Email}", request.Email);
             return BadRequest(new { message = ex.Message });
         }
     }
@@ -78,22 +84,25 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<ActionResult<AuthResponse>> Login(LoginRequest request)
     {
+        _logger.LogInformation("Login request received for email: {Email}", request.Email);
         try
         {
             var isAuthenticated = await _userService.AuthenticateUserAsync(request.Email, request.Password);
             if (!isAuthenticated)
             {
+                _logger.LogWarning("Login failed: Invalid credentials for email: {Email}", request.Email);
                 return Unauthorized(new { message = "Invalid email or password" });
             }
 
             var user = await _userService.GetUserByEmailAsync(request.Email);
             if (user == null || !user.IsActive)
             {
+                _logger.LogWarning("Login failed: Account inactive for email: {Email}", request.Email);
                 return Unauthorized(new { message = "Account is inactive" });
             }
 
             var token = await _userService.GenerateJwtTokenAsync(user);
-
+            _logger.LogInformation("Login successful for email: {Email}", request.Email);
             return Ok(new AuthResponse
             {
                 Success = true,
@@ -110,6 +119,7 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error during login for email: {Email}", request.Email);
             return BadRequest(new { message = ex.Message });
         }
     }
@@ -119,22 +129,25 @@ public class AuthController : ControllerBase
     [HttpPost("refresh")]
     public async Task<ActionResult<AuthResponse>> RefreshToken()
     {
+        _logger.LogInformation("Token refresh requested");
         try
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
             {
+                _logger.LogWarning("Token refresh failed: No user id found in claims");
                 return Unauthorized();
             }
 
             var user = await _userService.GetUserByIdAsync(userId);
             if (user == null)
             {
+                _logger.LogWarning("Token refresh failed: User not found for id {UserId}", userId);
                 return NotFound();
             }
 
             var token = await _userService.GenerateJwtTokenAsync(user);
-
+            _logger.LogInformation("Token refreshed for user id: {UserId}", userId);
             return Ok(new AuthResponse
             {
                 Success = true,
@@ -151,6 +164,7 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error during token refresh");
             return BadRequest(new { message = ex.Message });
         }
     }
@@ -161,23 +175,24 @@ public class AuthController : ControllerBase
     [Authorize]
     public async Task<ActionResult<UserResponse>> GetProfile()
     {
+        _logger.LogInformation("Profile request received");
         try
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
             {
+                _logger.LogWarning("Profile request failed: No user id found in claims");
                 return Unauthorized();
             }
 
             var user = await _userService.GetUserByIdAsync(userId);
             if (user == null)
             {
+                _logger.LogWarning("Profile request failed: User not found for id {UserId}", userId);
                 return NotFound();
             }
 
-            Console.WriteLine($"Profile Data: {user}");
-
-
+            _logger.LogInformation("Profile data returned for user id: {UserId}", userId);
             return Ok(new UserResponse
             {
                 Id = user.Id,
@@ -192,6 +207,7 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error during profile request");
             return BadRequest(new { message = ex.Message });
         }
     }
