@@ -106,8 +106,8 @@ public class AuthController : ControllerBase
             var user = await _userService.GetUserByEmailAsync(request.Email);
             if (user == null || !user.IsActive)
             {
-                _logger.LogWarning("Login failed: Account inactive or user not found for email: {Email}", request.Email);
-                return Unauthorized(new { message = "Account is inactive" });
+                _logger.LogWarning("Login forbidden: Account inactive or user not found for email: {Email}", request.Email);
+                return Forbid(); // Return 403 Forbidden for role/account based forbidden
             }
 
             var token = await _userService.GenerateJwtTokenAsync(user);

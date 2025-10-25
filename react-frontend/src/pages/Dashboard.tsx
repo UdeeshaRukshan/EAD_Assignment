@@ -24,25 +24,25 @@ const Dashboard: React.FC = () => {
       // Load bookings based on user role
       if (user) {
         let userBookings: Booking[] = [];
-        
         switch (user.role) {
           case 'Admin':
           case 'Operator':
           case 'BackofficeUser':
-            // Admins, operators, and backoffice users can see all bookings
             userBookings = await apiService.getAllBookings();
             break;
           case 'EVOwner':
           default:
-            // EV Owners can only see their own bookings
             userBookings = await apiService.getUserBookings(user.id);
             break;
         }
-        
         setBookings(userBookings);
       }
-    } catch (err) {
-      setError('Failed to load dashboard data');
+    } catch (err: any) {
+      if (err.response?.status === 403) {
+        setError('Role-based access: Some Functionality are only available to administrator');
+      } else {
+        setError('Failed to load dashboard data');
+      }
       console.error('Dashboard error:', err);
     } finally {
       setLoading(false);
@@ -80,7 +80,7 @@ const Dashboard: React.FC = () => {
 
       {/* Dashboard Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {error && (
+        {error && error !== 'Failed to load dashboard data' && (
           <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
             {error}
           </div>

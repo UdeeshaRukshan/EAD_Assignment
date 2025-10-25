@@ -171,7 +171,8 @@ public class ChargingStationsController : ControllerBase
             // Only operators can update their own stations, admins can update any
             if (userRole != "Admin" && existingStation.OperatorId != userId)
             {
-                return Forbid();
+                _logger.LogWarning("UpdateStation forbidden for id: {Id}", id);
+                return Forbid(); // 403 Forbidden for role/account-based forbidden
             }
 
             existingStation.Name = request.Name;

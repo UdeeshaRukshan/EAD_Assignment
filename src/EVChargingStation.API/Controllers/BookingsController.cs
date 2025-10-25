@@ -69,7 +69,7 @@ public class BookingsController : ControllerBase
             if (userRole != "Admin" && userRole != "BackofficeUser" && currentUserId != userId)
             {
                 _logger.LogWarning("GetUserBookings forbidden for userId: {UserId}", userId);
-                return Forbid();
+                return Forbid(); // 403 Forbidden for role/account-based forbidden
             }
 
             var bookings = await _bookingService.GetBookingsByUserAsync(userId);
@@ -104,7 +104,7 @@ public class BookingsController : ControllerBase
                 if (station == null || station.OperatorId != userId)
                 {
                     _logger.LogWarning("GetStationBookings forbidden for stationId: {StationId}", stationId);
-                    return Forbid();
+                    return Forbid(); // 403 Forbidden for role/account-based forbidden
                 }
             }
 
@@ -166,7 +166,8 @@ public class BookingsController : ControllerBase
             {
                 if (userRole == "EVOwner" && booking.UserId != userId)
                 {
-                    return Forbid();
+                    _logger.LogWarning("GetBooking forbidden for id: {Id}", id);
+                    return Forbid(); // 403 Forbidden for role/account-based forbidden
                 }
                 // Allow all Operators to view any booking (station ownership not enforced)
                 // else if (userRole == "Operator")
@@ -205,7 +206,8 @@ public class BookingsController : ControllerBase
             // Only EV owners can create bookings for themselves
             if (userRole == "EVOwner" && request.UserId != userId)
             {
-                return Forbid();
+                _logger.LogWarning("CreateBooking forbidden for userId: {UserId}", request.UserId);
+                return Forbid(); // 403 Forbidden for role/account-based forbidden
             }
 
             // Validate station and connector exist
