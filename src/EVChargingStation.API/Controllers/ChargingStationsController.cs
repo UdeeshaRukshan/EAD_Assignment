@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using EVChargingStation.Models;
 using EVChargingStation.Services.Interfaces;
 using System.Security.Claims;
+using Microsoft.Extensions.Logging;
 
 namespace EVChargingStation.API.Controllers;
 
@@ -19,10 +20,12 @@ namespace EVChargingStation.API.Controllers;
 public class ChargingStationsController : ControllerBase
 {
     private readonly IChargingStationService _stationService;
+    private readonly ILogger<ChargingStationsController> _logger;
 
-    public ChargingStationsController(IChargingStationService stationService)
+    public ChargingStationsController(IChargingStationService stationService, ILogger<ChargingStationsController> logger)
     {
         _stationService = stationService;
+        _logger = logger;
     }
 
     // GET: api/chargingstations
@@ -31,13 +34,16 @@ public class ChargingStationsController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<ChargingStation>>> GetStations()
     {
+        _logger.LogInformation("GetStations request received");
         try
         {
             var stations = await _stationService.GetAllStationsAsync();
+            _logger.LogInformation("Returned {Count} stations", stations.Count());
             return Ok(stations);
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error in GetStations");
             return BadRequest(new { message = ex.Message });
         }
     }
@@ -48,17 +54,21 @@ public class ChargingStationsController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<ChargingStation>> GetStation(string id)
     {
+        _logger.LogInformation("GetStation request for id: {Id}", id);
         try
         {
             var station = await _stationService.GetStationByIdAsync(id);
             if (station == null)
             {
+                _logger.LogWarning("GetStation not found for id: {Id}", id);
                 return NotFound();
             }
+            _logger.LogInformation("Returned station for id: {Id}", id);
             return Ok(station);
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error in GetStation for id: {Id}", id);
             return BadRequest(new { message = ex.Message });
         }
     }
@@ -69,13 +79,16 @@ public class ChargingStationsController : ControllerBase
     [Authorize(Roles = "Operator,Admin")]
     public async Task<ActionResult<IEnumerable<ChargingStation>>> GetStationsByOperator(string operatorId)
     {
+        _logger.LogInformation("GetStationsByOperator request for operatorId: {OperatorId}", operatorId);
         try
         {
             var stations = await _stationService.GetStationsByOperatorAsync(operatorId);
+            _logger.LogInformation("Returned {Count} stations for operatorId: {OperatorId}", stations.Count(), operatorId);
             return Ok(stations);
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error in GetStationsByOperator for operatorId: {OperatorId}", operatorId);
             return BadRequest(new { message = ex.Message });
         }
     }
@@ -86,13 +99,16 @@ public class ChargingStationsController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<ChargingStation>>> GetNearbyStations([FromQuery] double latitude, [FromQuery] double longitude, [FromQuery] double radius = 10)
     {
+        _logger.LogInformation("GetNearbyStations request for lat: {Latitude}, long: {Longitude}, radius: {Radius}", latitude, longitude, radius);
         try
         {
             var stations = await _stationService.GetStationsNearLocationAsync(latitude, longitude, radius);
+            _logger.LogInformation("Returned {Count} nearby stations", stations.Count());
             return Ok(stations);
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error in GetNearbyStations");
             return BadRequest(new { message = ex.Message });
         }
     }
@@ -103,6 +119,7 @@ public class ChargingStationsController : ControllerBase
     [Authorize(Roles = "Admin,Operator")]
     public async Task<ActionResult<ChargingStation>> CreateStation([FromBody] CreateStationRequest request)
     {
+        _logger.LogInformation("CreateStation request for name: {Name}", request.Name);
         try
         {
             var operatorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -123,10 +140,12 @@ public class ChargingStationsController : ControllerBase
             };
 
             var createdStation = await _stationService.CreateStationAsync(station);
+            _logger.LogInformation("Station created with id: {Id}", createdStation.Id);
             return CreatedAtAction(nameof(GetStation), new { id = createdStation.Id }, createdStation);
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error in CreateStation for name: {Name}", request.Name);
             return BadRequest(new { message = ex.Message });
         }
     }
@@ -137,6 +156,7 @@ public class ChargingStationsController : ControllerBase
     [Authorize(Roles = "Admin,Operator")]
     public async Task<ActionResult<ChargingStation>> UpdateStation(string id, [FromBody] UpdateStationRequest request)
     {
+        _logger.LogInformation("UpdateStation request for id: {Id}", id);
         try
         {
             var existingStation = await _stationService.GetStationByIdAsync(id);
@@ -166,10 +186,12 @@ public class ChargingStationsController : ControllerBase
             existingStation.ImageUrls = request.ImageUrls;
 
             var updatedStation = await _stationService.UpdateStationAsync(existingStation);
+            _logger.LogInformation("Station updated for id: {Id}", id);
             return Ok(updatedStation);
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error in UpdateStation for id: {Id}", id);
             return BadRequest(new { message = ex.Message });
         }
     }
@@ -180,17 +202,21 @@ public class ChargingStationsController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult> DeleteStation(string id)
     {
+        _logger.LogInformation("DeleteStation request for id: {Id}", id);
         try
         {
             var result = await _stationService.DeleteStationAsync(id);
             if (!result)
             {
+                _logger.LogWarning("DeleteStation not found for id: {Id}", id);
                 return NotFound();
             }
+            _logger.LogInformation("Station deleted for id: {Id}", id);
             return NoContent();
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error in DeleteStation for id: {Id}", id);
             return BadRequest(new { message = ex.Message });
         }
     }
@@ -201,6 +227,7 @@ public class ChargingStationsController : ControllerBase
     [Authorize(Roles = "Admin,Operator")]
     public async Task<ActionResult> UpdateStationStatus(string id, [FromBody] UpdateStationStatusRequest request)
     {
+        _logger.LogInformation("UpdateStationStatus request for id: {Id}, status: {Status}", id, request.Status);
         try
         {
             var station = await _stationService.GetStationByIdAsync(id);
@@ -232,12 +259,15 @@ public class ChargingStationsController : ControllerBase
             var result = await _stationService.UpdateStationStatusAsync(id, request.Status);
             if (!result)
             {
+                _logger.LogWarning("Failed to update station status for id: {Id}", id);
                 return NotFound();
             }
+            _logger.LogInformation("Station status updated for id: {Id}", id);
             return NoContent();
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error in UpdateStationStatus for id: {Id}", id);
             return BadRequest(new { message = ex.Message });
         }
     }
