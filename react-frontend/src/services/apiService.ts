@@ -8,6 +8,7 @@ import {
   CreateBookingRequest,
   UpdateBookingRequest,
   CompleteBookingRequest,
+  User,
 } from "../types";
 
 class ApiService {
@@ -45,7 +46,6 @@ class ApiService {
           this.setAuthToken(null);
           localStorage.removeItem("token");
           localStorage.removeItem("user");
-          window.location.href = "/login";
         }
         return Promise.reject(error);
       }
@@ -111,12 +111,131 @@ class ApiService {
     await this.api.patch(`/users/${nic}/activate`);
   }
 
-  async deactivateUser(nic: string): Promise<void> {
-    await this.api.patch(`/users/${nic}/deactivate`);
+  async deactivateUser(): Promise<void> {
+    await this.api.patch("/auth/deactivate");
   }
 
   async deleteUser(nic: string): Promise<void> {
     await this.api.delete(`/users/${nic}`);
+  }
+
+  // Admin User Management endpoints
+  async getAllUsers(): Promise<User[]> {
+    try {
+      const response: AxiosResponse<User[]> = await this.api.get("/auth/users");
+      return response.data;
+    } catch (error: any) {
+      // Log detailed error for debugging
+      console.error('getAllUsers API Error:', {
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message,
+        hasToken: !!this.authToken
+      });
+      throw error;
+    }
+  }
+
+  async getUserById(id: string): Promise<User> {
+    try {
+      const response: AxiosResponse<User> = await this.api.get(
+        `/auth/users/${id}`
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error('getUserById API Error:', {
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message,
+        userId: id
+      });
+      throw error;
+    }
+  }
+
+  async updateUser(
+    id: string,
+    data: {
+      firstName: string;
+      lastName: string;
+      email: string;
+      phoneNumber: string;
+      role: number;
+      nic?: string;
+      password?: string;
+    }
+  ): Promise<User> {
+    try {
+      // Backend expects RegisterRequest format
+      const requestBody = {
+        nic: data.nic || "",
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phoneNumber: data.phoneNumber,
+        password: data.password || "",
+        role: data.role
+      };
+
+      const response: AxiosResponse<User> = await this.api.put(
+        `/auth/users/${id}`,
+        requestBody
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error('updateUser API Error:', {
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message,
+        userId: id,
+        requestData: data
+      });
+      throw error;
+    }
+  }
+
+  async deleteUserByAdmin(id: string): Promise<void> {
+    try {
+      await this.api.delete(`/auth/users/${id}`);
+    } catch (error: any) {
+      console.error('deleteUserByAdmin API Error:', {
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message,
+        userId: id
+      });
+      throw error;
+    }
+  }
+
+  async reactivateUser(id: string): Promise<void> {
+    try {
+      await this.api.patch(`/auth/users/${id}/reactivate`);
+    } catch (error: any) {
+      console.error('reactivateUser API Error:', {
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message,
+        userId: id
+      });
+      throw error;
+    }
+  }
+
+  async deactivateUserByAdmin(id: string): Promise<void> {
+    try {
+      console.log('Deactivating user:', {
+        userId: id,
+        endpoint: `/auth/users/${id}/deactivate`,
+        fullUrl: `http://localhost:5105/api/auth/users/${id}/deactivate`
+      });
+      await this.api.patch(`/auth/users/${id}/deactivate`);
+    } catch (error: any) {
+      console.error('deactivateUserByAdmin API Error:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        message: error.response?.data?.message || error.message,
+        userId: id,
+        endpoint: `/auth/users/${id}/deactivate`,
+        responseData: error.response?.data
+      });
+      throw error;
+    }
   }
 
   async getChargingStations(): Promise<ChargingStation[]> {

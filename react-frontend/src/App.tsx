@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
@@ -10,6 +10,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import RegisterPage from './pages/RegistrationPage';
 import EVUserProfile from './pages/EVUserProfile';
+import UserManagement from './pages/UserManagement';
 
 function App() {
   return (
@@ -70,6 +71,17 @@ function App() {
                 </ProtectedRoute>
               } 
             />
+            <Route 
+              path="/users" 
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <UserManagement />
+                  </Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
       </Router>

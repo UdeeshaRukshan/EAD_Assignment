@@ -268,6 +268,195 @@ public class AuthController : ControllerBase
         _logger.LogInformation("Account deactivated for user id: {UserId}", userId);
         return Ok(new { message = "Account has been deactivated." });
     }
+
+    // GET: api/auth/users
+    // Retrieves all users (Admin only)
+    [HttpGet("users")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<IEnumerable<UserResponse>>> GetAllUsers()
+    {
+        _logger.LogInformation("GetAllUsers endpoint called");
+        try
+        {
+            var users = await _userService.GetAllUsersAsync();
+            _logger.LogInformation("Retrieved {Count} users", users.Count());
+            var result = users.Select(u => new UserResponse
+            {
+                Id = u.Id,
+                NIC = u.NIC,
+                FirstName = u.FirstName,
+                LastName = u.LastName,
+                Email = u.Email,
+                Role = u.Role.ToString(),
+                PhoneNumber = u.PhoneNumber,
+                IsActive = u.IsActive
+            });
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in GetAllUsers");
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    // GET: api/auth/users/{id}
+    // Retrieves a user by ID (Admin only)
+    [HttpGet("users/{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<UserResponse>> GetUserById(string id)
+    {
+        _logger.LogInformation("GetUserById endpoint called for id: {Id}", id);
+        try
+        {
+            var user = await _userService.GetUserByIdAsync(id);
+            if (user == null)
+            {
+                _logger.LogWarning("User not found for id: {Id}", id);
+                return NotFound();
+            }
+            _logger.LogInformation("User found for id: {Id}", id);
+            return Ok(new UserResponse
+            {
+                Id = user.Id,
+                NIC = user.NIC,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email,
+                Role = user.Role.ToString(),
+                PhoneNumber = user.PhoneNumber,
+                IsActive = user.IsActive
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in GetUserById for id: {Id}", id);
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    // PATCH: api/auth/users/{id}/reactivate
+    // Reactivates a deactivated account (Admin only)
+    [HttpPatch("users/{id}/reactivate")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ReactivateUser(string id)
+    {
+        _logger.LogInformation("ReactivateUser endpoint called for id: {Id}", id);
+        try
+        {
+            var user = await _userService.GetUserByIdAsync(id);
+            if (user == null)
+            {
+                _logger.LogWarning("User not found for reactivation, id: {Id}", id);
+                return NotFound();
+            }
+            if (user.IsActive)
+            {
+                _logger.LogInformation("User already active, id: {Id}", id);
+                return Ok(new { message = "Account is already active." });
+            }
+            user.IsActive = true;
+            await _userService.UpdateUserAsync(user);
+            _logger.LogInformation("User reactivated successfully, id: {Id}", id);
+            return Ok(new { message = "Account has been reactivated." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in ReactivateUser for id: {Id}", id);
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    // PUT: api/auth/users/{id}
+    // Updates user details (Admin only)
+    [HttpPut("users/{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UpdateUser(string id, [FromBody] RegisterRequest request)
+    {
+        _logger.LogInformation("UpdateUser endpoint called for id: {Id}", id);
+        try
+        {
+            var user = await _userService.GetUserByIdAsync(id);
+            if (user == null)
+            {
+                _logger.LogWarning("User not found for update, id: {Id}", id);
+                return NotFound();
+            }
+            _logger.LogDebug("Updating user: {Id} with email: {Email}", id, request.Email);
+            user.NIC = request.NIC;
+            user.FirstName = request.FirstName;
+            user.LastName = request.LastName;
+            user.Email = request.Email;
+            user.PhoneNumber = request.PhoneNumber;
+            user.Role = request.Role;
+            await _userService.UpdateUserAsync(user);
+            _logger.LogInformation("User updated successfully, id: {Id}", id);
+            return Ok(new { message = "User updated successfully." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in UpdateUser for id: {Id}", id);
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    // PATCH: api/auth/users/{id}/deactivate
+    // Deactivates a user account (Admin only)
+    [HttpPatch("users/{id}/deactivate")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> DeactivateUserByAdmin(string id)
+    {
+        _logger.LogInformation("DeactivateUserByAdmin endpoint called for id: {Id}", id);
+        try
+        {
+            var user = await _userService.GetUserByIdAsync(id);
+            if (user == null)
+            {
+                _logger.LogWarning("User not found for deactivation, id: {Id}", id);
+                return NotFound();
+            }
+            if (!user.IsActive)
+            {
+                _logger.LogInformation("User already inactive, id: {Id}", id);
+                return Ok(new { message = "Account is already deactivated." });
+            }
+            user.IsActive = false;
+            await _userService.UpdateUserAsync(user);
+            _logger.LogInformation("User deactivated successfully by admin, id: {Id}", id);
+            return Ok(new { message = "Account has been deactivated." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in DeactivateUserByAdmin for id: {Id}", id);
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    // DELETE: api/auth/users/{id}
+    // Deletes a user (Admin only)
+    [HttpDelete("users/{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> DeleteUser(string id)
+    {
+        _logger.LogInformation("DeleteUser endpoint called for id: {Id}", id);
+        try
+        {
+            var user = await _userService.GetUserByIdAsync(id);
+            if (user == null)
+            {
+                _logger.LogWarning("User not found for deletion, id: {Id}", id);
+                return NotFound();
+            }
+            await _userService.DeleteUserAsync(id);
+            _logger.LogInformation("User deleted successfully, id: {Id}", id);
+            return Ok(new { message = "User deleted successfully." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in DeleteUser for id: {Id}", id);
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }
 
 // DTOs
