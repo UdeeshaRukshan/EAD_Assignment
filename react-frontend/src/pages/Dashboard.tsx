@@ -21,7 +21,7 @@ const Dashboard: React.FC = () => {
       const stationsData = await apiService.getChargingStations();
       setStations(stationsData);
 
-      // Load bookings based on user role
+
       if (user) {
         let userBookings: Booking[] = [];
         
@@ -29,12 +29,11 @@ const Dashboard: React.FC = () => {
           case 'Admin':
           case 'Operator':
           case 'BackofficeUser':
-            // Admins, operators, and backoffice users can see all bookings
+
             userBookings = await apiService.getAllBookings();
             break;
           case 'EVOwner':
           default:
-            // EV Owners can only see their own bookings
             userBookings = await apiService.getUserBookings(user.id);
             break;
         }

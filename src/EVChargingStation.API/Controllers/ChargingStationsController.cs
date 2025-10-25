@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using EVChargingStation.Models;
 using EVChargingStation.Services.Interfaces;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace EVChargingStation.API.Controllers;
 
@@ -131,69 +132,75 @@ public class ChargingStationsController : ControllerBase
         }
     }
 
-    // PUT: api/chargingstations/{id}
-    // Updates a charging station
-    [HttpPut("{id}")]
-    [Authorize(Roles = "Admin,Operator")]
-    public async Task<ActionResult<ChargingStation>> UpdateStation(string id, [FromBody] UpdateStationRequest request)
+// PATCH: api/chargingstations/{id}
+[HttpPatch("{id}")]
+[Authorize(Roles = "Admin,Operator")]
+public async Task<ActionResult<ChargingStation>> PatchStation(string id, [FromBody] JsonElement updates)
+{
+    try
     {
-        try
+        var existingStation = await _stationService.GetStationByIdAsync(id);
+        if (existingStation == null)
+            return NotFound();
+
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+        if (userRole != "Admin" && existingStation.OperatorId != userId)
+            return Forbid();
+
+        // Deserialize dynamic partial update
+        var updateDict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(updates.GetRawText());
+
+        if (updateDict == null)
+            return BadRequest("Invalid JSON payload.");
+
+        foreach (var kvp in updateDict)
         {
-            var existingStation = await _stationService.GetStationByIdAsync(id);
-            if (existingStation == null)
+            switch (kvp.Key.ToLower())
             {
-                return NotFound();
+                case "name":
+                    existingStation.Name = kvp.Value?.ToString();
+                    break;
+                case "description":
+                    existingStation.Description = kvp.Value?.ToString();
+                    break;
+                case "address":
+                    existingStation.Address = kvp.Value?.ToString();
+                    break;
+                case "priceperkwh":
+                    existingStation.PricePerKWh = Convert.ToDecimal(kvp.Value);
+                    break;
+                case "openinghours":
+                    existingStation.OpeningHours = kvp.Value?.ToString();
+                    break;
+                case "status":
+                    if (Enum.TryParse(typeof(StationStatus), kvp.Value?.ToString(), out var status))
+                        existingStation.Status = (StationStatus)status;
+                    break;
+                case "amenities":
+                    existingStation.Amenities = System.Text.Json.JsonSerializer.Deserialize<List<string>>(kvp.Value.ToString());
+                    break;
+                case "imageurls":
+                    existingStation.ImageUrls = System.Text.Json.JsonSerializer.Deserialize<List<string>>(kvp.Value.ToString());
+                    break;
+                case "location":
+                    existingStation.Location = System.Text.Json.JsonSerializer.Deserialize<Location>(kvp.Value.ToString());
+                    break;
+                case "connectors":
+                    existingStation.Connectors = System.Text.Json.JsonSerializer.Deserialize<List<Connector>>(kvp.Value.ToString());
+                    break;
             }
-
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-
-            // Only operators can update their own stations, admins can update any
-            if (userRole != "Admin" && existingStation.OperatorId != userId)
-            {
-                return Forbid();
-            }
-
-            existingStation.Name = request.Name;
-            existingStation.Description = request.Description;
-            existingStation.Location = request.Location;
-            existingStation.Address = request.Address;
-            existingStation.Connectors = request.Connectors;
-            existingStation.Status = request.Status;
-            existingStation.Amenities = request.Amenities;
-            existingStation.OpeningHours = request.OpeningHours;
-            existingStation.PricePerKWh = request.PricePerKWh;
-            existingStation.ImageUrls = request.ImageUrls;
-
-            var updatedStation = await _stationService.UpdateStationAsync(existingStation);
-            return Ok(updatedStation);
         }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+
+        var updatedStation = await _stationService.UpdateStationAsync(existingStation);
+        return Ok(updatedStation);
     }
-
-    // DELETE: api/chargingstations/{id}
-    // Deletes a charging station
-    [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult> DeleteStation(string id)
+    catch (Exception ex)
     {
-        try
-        {
-            var result = await _stationService.DeleteStationAsync(id);
-            if (!result)
-            {
-                return NotFound();
-            }
-            return NoContent();
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        return BadRequest(new { message = ex.Message });
     }
+}
 
     // PATCH: api/chargingstations/{id}/status
     // Updates the status of a charging station
