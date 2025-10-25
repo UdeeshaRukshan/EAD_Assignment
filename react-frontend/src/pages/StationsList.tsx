@@ -84,7 +84,6 @@ const StationsList: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
         <div className="mb-8">
           <div className="flex justify-between items-center">
             <div>
@@ -94,7 +93,6 @@ const StationsList: React.FC = () => {
               </p>
             </div>
             <div className="flex items-center space-x-4">
-              {/* View Toggle */}
               <div className="flex bg-gray-100 rounded-lg p-1">
                 <button
                   onClick={() => setViewMode('list')}
@@ -144,7 +142,6 @@ const StationsList: React.FC = () => {
           </div>
         )}
 
-        {/* Stations Content */}
         {stations.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-8 text-center">
             <div className="p-4 bg-gray-100 rounded-full inline-block mb-4">
@@ -174,7 +171,6 @@ const StationsList: React.FC = () => {
               onStationClick={(station) => setSelectedStation(station)}
             />
             
-            {/* Selected Station Details */}
             {selectedStation && (
               <div className="bg-white rounded-lg shadow-lg p-6">
                 <div className="flex justify-between items-start mb-4">

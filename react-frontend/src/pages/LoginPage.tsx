@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import RegisterPage from './RegistrationPage';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -12,7 +11,7 @@ const LoginPage: React.FC = () => {
 
   // Redirect if already logged in
   if (user) {
-    return <Navigate to="/profile" replace />;
+    return <Navigate to="/" replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

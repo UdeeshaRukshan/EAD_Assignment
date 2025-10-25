@@ -100,6 +100,7 @@ export interface CreateStationRequest {
   openingHours: string;
   pricePerKWh: number;
   imageUrls: string[];
+  status: StationStatus
 }
 
 // Booking related types and enums

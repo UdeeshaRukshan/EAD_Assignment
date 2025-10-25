@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using EVChargingStation.Models;
 using EVChargingStation.Services.Interfaces;
 using System.Security.Claims;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 
 namespace EVChargingStation.API.Controllers;
@@ -150,6 +151,16 @@ public class ChargingStationsController : ControllerBase
         }
     }
 
+// PATCH: api/chargingstations/{id}
+[HttpPatch("{id}")]
+[Authorize(Roles = "Admin,Operator")]
+public async Task<ActionResult<ChargingStation>> PatchStation(string id, [FromBody] JsonElement updates)
+{
+    try
+    {
+        var existingStation = await _stationService.GetStationByIdAsync(id);
+        if (existingStation == null)
+            return NotFound();
     // PUT: api/chargingstations/{id}
     // Updates a charging station
     [HttpPut("{id}")]
@@ -165,9 +176,55 @@ public class ChargingStationsController : ControllerBase
                 return NotFound();
             }
 
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 
+        if (userRole != "Admin" && existingStation.OperatorId != userId)
+            return Forbid();
+
+        // Deserialize dynamic partial update
+        var updateDict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(updates.GetRawText());
+
+        if (updateDict == null)
+            return BadRequest("Invalid JSON payload.");
+
+        foreach (var kvp in updateDict)
+        {
+            switch (kvp.Key.ToLower())
+            {
+                case "name":
+                    existingStation.Name = kvp.Value?.ToString();
+                    break;
+                case "description":
+                    existingStation.Description = kvp.Value?.ToString();
+                    break;
+                case "address":
+                    existingStation.Address = kvp.Value?.ToString();
+                    break;
+                case "priceperkwh":
+                    existingStation.PricePerKWh = Convert.ToDecimal(kvp.Value);
+                    break;
+                case "openinghours":
+                    existingStation.OpeningHours = kvp.Value?.ToString();
+                    break;
+                case "status":
+                    if (Enum.TryParse(typeof(StationStatus), kvp.Value?.ToString(), out var status))
+                        existingStation.Status = (StationStatus)status;
+                    break;
+                case "amenities":
+                    existingStation.Amenities = System.Text.Json.JsonSerializer.Deserialize<List<string>>(kvp.Value.ToString());
+                    break;
+                case "imageurls":
+                    existingStation.ImageUrls = System.Text.Json.JsonSerializer.Deserialize<List<string>>(kvp.Value.ToString());
+                    break;
+                case "location":
+                    existingStation.Location = System.Text.Json.JsonSerializer.Deserialize<Location>(kvp.Value.ToString());
+                    break;
+                case "connectors":
+                    existingStation.Connectors = System.Text.Json.JsonSerializer.Deserialize<List<Connector>>(kvp.Value.ToString());
+                    break;
+            }
+        }
             // Only operators can update their own stations, admins can update any
             if (userRole != "Admin" && existingStation.OperatorId != userId)
             {
@@ -186,6 +243,14 @@ public class ChargingStationsController : ControllerBase
             existingStation.PricePerKWh = request.PricePerKWh;
             existingStation.ImageUrls = request.ImageUrls;
 
+        var updatedStation = await _stationService.UpdateStationAsync(existingStation);
+        return Ok(updatedStation);
+    }
+    catch (Exception ex)
+    {
+        return BadRequest(new { message = ex.Message });
+    }
+}
             var updatedStation = await _stationService.UpdateStationAsync(existingStation);
             _logger.LogInformation("Station updated for id: {Id}", id);
             return Ok(updatedStation);
