@@ -27,7 +27,7 @@ class LoginActivity : AppCompatActivity() {
                    Build.FINGERPRINT.contains("emulator")) {
         "http://10.0.2.2:5105/api"        // Emulator
     } else {
-        "http://192.168.43.28:5105/api"   // Physical Device  
+        "http://172.20.10.3:5105/api"   // Physical Device
     }
 }
     

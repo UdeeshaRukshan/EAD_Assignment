@@ -3,20 +3,20 @@ package com.example.evmobile
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.preference.PreferenceManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
 import android.widget.*
 import com.google.android.material.button.MaterialButton
+import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
 
-class StationDetailActivity : AppCompatActivity(), OnMapReadyCallback {
+class StationDetailActivity : AppCompatActivity() {
 
-    private lateinit var googleMap: GoogleMap
+    private lateinit var mapView: MapView
     private lateinit var station: ChargingStationModel
 
     companion object {
@@ -25,6 +25,10 @@ class StationDetailActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Initialize osmdroid configuration
+        Configuration.getInstance().load(this, PreferenceManager.getDefaultSharedPreferences(this))
+        
         setContentView(R.layout.activity_station_detail)
 
         // Get station from intent
@@ -90,9 +94,25 @@ class StationDetailActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun setupMap() {
-        val mapFragment = supportFragmentManager
-            .findFragmentById(R.id.mapView) as SupportMapFragment
-        mapFragment.getMapAsync(this)
+        mapView = findViewById(R.id.mapView)
+        
+        // Configure map
+        mapView.setTileSource(TileSourceFactory.MAPNIK)
+        mapView.setMultiTouchControls(true)
+        
+        val stationLocation = GeoPoint(station.latitude, station.longitude)
+        
+        // Add marker for the station
+        val marker = Marker(mapView)
+        marker.position = stationLocation
+        marker.title = station.name
+        marker.snippet = station.address
+        marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+        mapView.overlays.add(marker)
+        
+        // Move camera to station location
+        mapView.controller.setZoom(16.0)
+        mapView.controller.setCenter(stationLocation)
     }
 
     private fun setupClickListeners() {
@@ -118,29 +138,6 @@ class StationDetailActivity : AppCompatActivity(), OnMapReadyCallback {
             }
             startActivity(intent)
         }
-    }
-
-    override fun onMapReady(map: GoogleMap) {
-        googleMap = map
-
-        val stationLocation = LatLng(station.latitude, station.longitude)
-        
-        // Add marker for the station
-        googleMap.addMarker(
-            MarkerOptions()
-                .position(stationLocation)
-                .title(station.name)
-                .snippet(station.address)
-        )
-
-        // Move camera to station location
-        googleMap.moveCamera(
-            CameraUpdateFactory.newLatLngZoom(stationLocation, 15f)
-        )
-
-        // Enable zoom controls
-        googleMap.uiSettings.isZoomControlsEnabled = true
-        googleMap.uiSettings.isMapToolbarEnabled = true
     }
 
     private fun showBookingDialog() {
@@ -181,5 +178,16 @@ class StationDetailActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onSupportNavigateUp(): Boolean {
         onBackPressed()
         return true
+    }
+    
+    // MapView lifecycle methods
+    override fun onResume() {
+        super.onResume()
+        mapView.onResume()
+    }
+    
+    override fun onPause() {
+        super.onPause()
+        mapView.onPause()
     }
 }
