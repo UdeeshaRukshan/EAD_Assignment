@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { User } from '../types';
 import { apiService } from '../services/apiService';
-import ApiDiagnostics from '../components/ApiDiagnostics';
 
 const UserManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
@@ -158,17 +157,7 @@ const UserManagement: React.FC = () => {
       await loadUsers();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      const status = err.response?.status;
       
-      if (status === 401) {
-        setError('Session expired. Please log in again.');
-      } else if (status === 403) {
-        setError('Access Denied: You do not have permission to reactivate users.');
-      } else if (status === 404) {
-        setError('Backend Error: PATCH /api/auth/users/{id}/reactivate endpoint not found. The reactivate user endpoint is not implemented on the backend.');
-      } else {
-        setError(err.response?.data?.message || 'Failed to reactivate user. Please try again.');
-      }
       console.error('Reactivate user error:', err);
     }
   };
@@ -200,7 +189,7 @@ const UserManagement: React.FC = () => {
       } else if (status === 403) {
         setError('Access Denied: You do not have permission to deactivate users.');
       } else if (status === 404) {
-        setError(`Backend Error: The deactivate endpoint returned 404. According to Swagger, PATCH /api/auth/users/{id}/deactivate should exist. Please check: 1) Backend is running on port 5105, 2) User ID is valid: ${userId.substring(0, 8)}..., 3) Backend logs for errors.`);
+        setError(`Backend Error: The deactivate endpoint returned 404. Please check: 1) Backend is running, 2) User ID is valid, 3) Backend logs for errors.`);
       } else if (status === 400) {
         setError(responseData?.message || 'Bad Request: ' + JSON.stringify(responseData));
       } else if (status === 500) {
@@ -301,7 +290,6 @@ const UserManagement: React.FC = () => {
         {/* Messages */}
         {error && (
           <div className="mb-6">
-            {error.includes('404') && <ApiDiagnostics />}
             
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
               <div className="flex items-center">
@@ -310,21 +298,6 @@ const UserManagement: React.FC = () => {
                 </svg>
                 <div className="flex-1">
                   <p className="font-medium">{error}</p>
-                  {error.includes('404') && (
-                    <div className="mt-2 text-sm">
-                      <p className="font-semibold">Troubleshooting Steps:</p>
-                      <ol className="list-decimal list-inside mt-1 space-y-1">
-                        <li>Verify the backend API is running on http://localhost:5105</li>
-                        <li>Check if the endpoint GET /api/auth/users is implemented in the backend</li>
-                        <li>Ensure your Admin JWT token is valid (check browser console for token details)</li>
-                        <li>Test the endpoint directly using Postman or curl with the Admin JWT token</li>
-                        <li>Check backend logs for any errors or missing route configurations</li>
-                      </ol>
-                      <div className="mt-3 p-2 bg-red-100 rounded text-xs font-mono">
-                        Expected URL: http://localhost:5105/api/auth/users
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
