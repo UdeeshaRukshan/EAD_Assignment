@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using EVChargingStation.Models;
 using EVChargingStation.Services.Interfaces;
 using System.Security.Claims;
+using Microsoft.Extensions.Logging;
 
 namespace EVChargingStation.API.Controllers;
 
@@ -20,11 +21,13 @@ public class BookingsController : ControllerBase
 {
     private readonly IBookingService _bookingService;
     private readonly IChargingStationService _stationService;
+    private readonly ILogger<BookingsController> _logger;
 
-    public BookingsController(IBookingService bookingService, IChargingStationService stationService)
+    public BookingsController(IBookingService bookingService, IChargingStationService stationService, ILogger<BookingsController> logger)
     {
         _bookingService = bookingService;
         _stationService = stationService;
+        _logger = logger;
     }
 
     /*
@@ -35,13 +38,16 @@ public class BookingsController : ControllerBase
     [Authorize(Roles = "Admin,Operator,BackofficeUser")]
     public async Task<ActionResult<IEnumerable<Booking>>> GetAllBookings()
     {
+        _logger.LogInformation("GetAllBookings request received");
         try
         {
             var bookings = await _bookingService.GetAllBookingsAsync();
+            _logger.LogInformation("Returned {Count} bookings", bookings.Count());
             return Ok(bookings);
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error in GetAllBookings");
             return BadRequest(new { message = ex.Message });
         }
     }
@@ -53,6 +59,7 @@ public class BookingsController : ControllerBase
     [HttpGet("user/{userId}")]
     public async Task<ActionResult<IEnumerable<Booking>>> GetUserBookings(string userId)
     {
+        _logger.LogInformation("GetUserBookings request for userId: {UserId}", userId);
         try
         {
             var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -61,14 +68,17 @@ public class BookingsController : ControllerBase
             // Users can only see their own bookings unless they're admin/backoffice
             if (userRole != "Admin" && userRole != "BackofficeUser" && currentUserId != userId)
             {
+                _logger.LogWarning("GetUserBookings forbidden for userId: {UserId}", userId);
                 return Forbid();
             }
 
             var bookings = await _bookingService.GetBookingsByUserAsync(userId);
+            _logger.LogInformation("Returned {Count} bookings for userId: {UserId}", bookings.Count(), userId);
             return Ok(bookings);
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error in GetUserBookings for userId: {UserId}", userId);
             return BadRequest(new { message = ex.Message });
         }
     }
@@ -81,6 +91,7 @@ public class BookingsController : ControllerBase
     [Authorize(Roles = "Admin,Operator,BackofficeUser")]
     public async Task<ActionResult<IEnumerable<Booking>>> GetStationBookings(string stationId)
     {
+        _logger.LogInformation("GetStationBookings request for stationId: {StationId}", stationId);
         try
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -92,15 +103,18 @@ public class BookingsController : ControllerBase
                 var station = await _stationService.GetStationByIdAsync(stationId);
                 if (station == null || station.OperatorId != userId)
                 {
+                    _logger.LogWarning("GetStationBookings forbidden for stationId: {StationId}", stationId);
                     return Forbid();
                 }
             }
 
             var bookings = await _bookingService.GetBookingsByStationAsync(stationId);
+            _logger.LogInformation("Returned {Count} bookings for stationId: {StationId}", bookings.Count(), stationId);
             return Ok(bookings);
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error in GetStationBookings for stationId: {StationId}", stationId);
             return BadRequest(new { message = ex.Message });
         }
     }
@@ -113,13 +127,16 @@ public class BookingsController : ControllerBase
     [Authorize(Roles = "Admin,Operator,BackofficeUser")]
     public async Task<ActionResult<IEnumerable<Booking>>> GetPendingBookings()
     {
+        _logger.LogInformation("GetPendingBookings request received");
         try
         {
             var bookings = await _bookingService.GetPendingBookingsAsync();
+            _logger.LogInformation("Returned {Count} pending bookings", bookings.Count());
             return Ok(bookings);
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error in GetPendingBookings");
             return BadRequest(new { message = ex.Message });
         }
     }
@@ -131,11 +148,13 @@ public class BookingsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<Booking>> GetBooking(string id)
     {
+        _logger.LogInformation("GetBooking request for id: {Id}", id);
         try
         {
             var booking = await _bookingService.GetBookingByIdAsync(id);
             if (booking == null)
             {
+                _logger.LogWarning("GetBooking not found for id: {Id}", id);
                 return NotFound();
             }
 
@@ -160,10 +179,12 @@ public class BookingsController : ControllerBase
                 // }
             }
 
+            _logger.LogInformation("Returned booking for id: {Id}", id);
             return Ok(booking);
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error in GetBooking for id: {Id}", id);
             return BadRequest(new { message = ex.Message });
         }
     }
@@ -175,6 +196,7 @@ public class BookingsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Booking>> CreateBooking([FromBody] CreateBookingRequest request)
     {
+        _logger.LogInformation("CreateBooking request for userId: {UserId}, stationId: {StationId}", request.UserId, request.StationId);
         try
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -228,10 +250,12 @@ public class BookingsController : ControllerBase
             };
 
             var createdBooking = await _bookingService.CreateBookingAsync(booking);
+            _logger.LogInformation("Booking created with id: {Id}", createdBooking.Id);
             return CreatedAtAction(nameof(GetBooking), new { id = createdBooking.Id }, createdBooking);
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error in CreateBooking for userId: {UserId}", request.UserId);
             return BadRequest(new { message = ex.Message });
         }
     }
@@ -243,6 +267,7 @@ public class BookingsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<ActionResult<Booking>> UpdateBooking(string id, [FromBody] UpdateBookingRequest request)
     {
+        _logger.LogInformation("UpdateBooking request for id: {Id}", id);
         try
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -324,10 +349,12 @@ public class BookingsController : ControllerBase
             existingBooking.Notes = request.Notes ?? existingBooking.Notes;
 
             var updatedBooking = await _bookingService.UpdateBookingAsync(existingBooking);
+            _logger.LogInformation("Booking updated for id: {Id}", id);
             return Ok(updatedBooking);
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error in UpdateBooking for id: {Id}", id);
             return BadRequest(new { message = ex.Message });
         }
     }
@@ -340,6 +367,7 @@ public class BookingsController : ControllerBase
     [Authorize(Roles = "Admin,Operator")]
     public async Task<ActionResult> ConfirmBooking(string id)
     {
+        _logger.LogInformation("ConfirmBooking request for id: {Id}", id);
         try
         {
             var booking = await _bookingService.GetBookingByIdAsync(id);
@@ -357,13 +385,15 @@ public class BookingsController : ControllerBase
             var result = await _bookingService.ConfirmBookingAsync(id, operatorId!);
             if (!result)
             {
+                _logger.LogWarning("Failed to confirm booking for id: {Id}", id);
                 return BadRequest(new { message = "Failed to confirm booking" });
             }
-
+            _logger.LogInformation("Booking confirmed for id: {Id}", id);
             return NoContent();
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error in ConfirmBooking for id: {Id}", id);
             return BadRequest(new { message = ex.Message });
         }
     }
@@ -375,6 +405,7 @@ public class BookingsController : ControllerBase
     [HttpPatch("{id}/cancel")]
     public async Task<ActionResult> CancelBooking(string id)
     {
+        _logger.LogInformation("CancelBooking request for id: {Id}", id);
         try
         {
             var booking = await _bookingService.GetBookingByIdAsync(id);
@@ -401,13 +432,15 @@ public class BookingsController : ControllerBase
             var result = await _bookingService.CancelBookingAsync(id);
             if (!result)
             {
+                _logger.LogWarning("Failed to cancel booking for id: {Id}", id);
                 return BadRequest(new { message = "Failed to cancel booking" });
             }
-
+            _logger.LogInformation("Booking cancelled for id: {Id}", id);
             return NoContent();
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error in CancelBooking for id: {Id}", id);
             return BadRequest(new { message = ex.Message });
         }
     }
@@ -420,6 +453,7 @@ public class BookingsController : ControllerBase
     [Authorize(Roles = "Admin,Operator")]
     public async Task<ActionResult> CompleteBooking(string id, [FromBody] CompleteBookingRequest request)
     {
+        _logger.LogInformation("CompleteBooking request for id: {Id}", id);
         try
         {
             var booking = await _bookingService.GetBookingByIdAsync(id);
@@ -437,13 +471,15 @@ public class BookingsController : ControllerBase
             var result = await _bookingService.CompleteBookingAsync(id, request.EnergyConsumed);
             if (!result)
             {
+                _logger.LogWarning("Failed to complete booking for id: {Id}", id);
                 return BadRequest(new { message = "Failed to complete booking" });
             }
-
+            _logger.LogInformation("Booking completed for id: {Id}", id);
             return NoContent();
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error in CompleteBooking for id: {Id}", id);
             return BadRequest(new { message = ex.Message });
         }
     }
